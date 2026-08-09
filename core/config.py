@@ -415,6 +415,8 @@ DURATION_FRAME_MAP = {
 DEFAULT_TEXT_MODEL = "agnes-2.0-flash"
 DEFAULT_IMAGE_MODEL = "agnes-image-2.1-flash"
 DEFAULT_VIDEO_MODEL = "agnes-video-v2.0"
+
+DEFAULT_MODELS = {
     "text": DEFAULT_TEXT_MODEL,
     "image": DEFAULT_IMAGE_MODEL,
     "video": DEFAULT_VIDEO_MODEL,
