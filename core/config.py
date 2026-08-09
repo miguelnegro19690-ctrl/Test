@@ -412,10 +412,10 @@ DURATION_FRAME_MAP = {
 # ═══════════════════════════════════════════════════
 
 # 各类型 Agnes 模型默认值（与三个 API 客户端的默认 model 对齐）
-DEFAULT_TEXT_MODEL = "agnes-2.0-flash"  # Keep as is (API)
-DEFAULT_IMAGE_MODEL = "agnes-image-2.1-flash"  # Keep as is (API)
-DEFAULT_VIDEO_MODEL = "agnes-video-v2.0"  # Keep as is (API)
-DEFAULT_MODELS = {
+# These are just display names - the API still uses agnes-2.0-flash
+TEXT_MODEL_DISPLAY = "Rehan Text Model"
+IMAGE_MODEL_DISPLAY = "Rehan Image Model"  
+VIDEO_MODEL_DISPLAY = "Rehan Video Model"
     "text": DEFAULT_TEXT_MODEL,
     "image": DEFAULT_IMAGE_MODEL,
     "video": DEFAULT_VIDEO_MODEL,
