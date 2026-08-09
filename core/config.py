@@ -417,9 +417,9 @@ DEFAULT_IMAGE_MODEL = "agnes-image-2.1-flash"
 DEFAULT_VIDEO_MODEL = "agnes-video-v2.0"
 
 DEFAULT_MODELS = {
-    "text": DEFAULT_TEXT_MODEL,
-    "image": DEFAULT_IMAGE_MODEL,
-    "video": DEFAULT_VIDEO_MODEL,
+    "text": rehan_text_model,
+    "image": rehan_image_model,
+    "video": rehan_video_model,
 }
 
 
