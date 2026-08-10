@@ -25,24 +25,9 @@
             border: 1px solid #2a3344;
             box-shadow: 0 12px 40px rgba(0,0,0,0.6);
         }
-        h1 {
-            color: #7fdbff;
-            font-size: 26px;
-            text-align: center;
-            margin-bottom: 4px;
-        }
-        .sub {
-            text-align: center;
-            color: #6a7a94;
-            font-size: 14px;
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            font-size: 14px;
-            color: #b0c4de;
-            margin: 12px 0 4px;
-        }
+        h1 { color: #7fdbff; font-size: 26px; text-align: center; margin-bottom: 4px; }
+        .sub { text-align: center; color: #6a7a94; font-size: 14px; margin-bottom: 20px; }
+        label { display: block; font-size: 14px; color: #b0c4de; margin: 12px 0 4px; }
         input, select, textarea, button {
             width: 100%;
             padding: 12px;
@@ -194,10 +179,8 @@
 
 <script>
 // ================================================================
-//  AGNES VIDEO GENERATOR – WITH API KEY AUTO‑CONFIG
+//  AGNES VIDEO GENERATOR – WITH LONGER POLLING (5 MIN)
 // ================================================================
-
-const API_BASE = ''; // relative path (same domain)
 
 const apiKeyInput = document.getElementById('apiKey');
 const promptInput = document.getElementById('prompt');
@@ -212,8 +195,8 @@ const downloadBtn = document.getElementById('downloadBtn');
 const errorBox = document.getElementById('errorBox');
 
 let isGenerating = false;
+let pollInterval = null;
 
-// ----- Helpers -----
 function setStatus(msg, isError = false) {
     statusDiv.textContent = msg;
     statusDiv.style.color = isError ? '#ff6b6b' : '#8a9bb5';
@@ -246,7 +229,56 @@ async function setApiKey(apiKey) {
     return true;
 }
 
-// ----- Generate video -----
+// ----- Poll task status with better handling -----
+async function pollTask(taskId) {
+    let attempts = 0;
+    const maxAttempts = 100; // 100 * 3s = 5 minutes
+    let videoUrl = null;
+
+    while (attempts < maxAttempts) {
+        attempts++;
+        await new Promise(r => setTimeout(r, 3000));
+
+        try {
+            const resp = await fetch(`/api/tasks/${taskId}`);
+            if (!resp.ok) continue;
+            const data = await resp.json();
+
+            // data fields: status, progress, final_video_file, error
+            const status = data.status || 'pending';
+            const progress = data.progress || 0;
+            setProgress(20 + (progress * 0.8));
+
+            setStatus(`⏳ Rendering... ${Math.round(progress)}% (${attempts}/${maxAttempts})`);
+
+            if (status === 'completed') {
+                // Try to get the video URL
+                if (data.final_video_file) {
+                    videoUrl = `/api/video/${taskId}`;
+                } else {
+                    // fallback: try to see if video exists
+                    const testResp = await fetch(`/api/video/${taskId}`, { method: 'HEAD' });
+                    if (testResp.ok) {
+                        videoUrl = `/api/video/${taskId}`;
+                    }
+                }
+                if (videoUrl) break;
+            } else if (status === 'failed') {
+                throw new Error(data.error || 'Generation failed');
+            }
+        } catch (e) {
+            // If the poll fails, we just continue – network hiccups are okay.
+            console.warn('Poll error:', e);
+        }
+    }
+
+    if (!videoUrl) {
+        throw new Error('Timeout waiting for video (5 minutes). The task might still be running – check Railway logs.');
+    }
+    return videoUrl;
+}
+
+// ----- Main generate function -----
 async function generateVideo() {
     if (isGenerating) return;
 
@@ -303,26 +335,8 @@ async function generateVideo() {
 
         if (data.task_id) {
             const taskId = data.task_id;
-            setStatus(`⏳ Rendering... (task ${taskId})`);
-            let videoUrl = null;
-            let attempts = 0;
-            while (attempts < 30) {
-                attempts++;
-                await new Promise(r => setTimeout(r, 3000));
-                const pollResp = await fetch(`/api/tasks/${taskId}`);
-                if (!pollResp.ok) continue;
-                const pollData = await pollResp.json();
-                const progress = pollData.progress || 0;
-                setProgress(20 + (progress * 0.8));
-                if (pollData.status === 'completed' && pollData.final_video_file) {
-                    videoUrl = `/api/video/${taskId}`;
-                    break;
-                } else if (pollData.status === 'failed') {
-                    throw new Error('Generation failed: ' + (pollData.error || 'unknown'));
-                }
-                setStatus(`⏳ Rendering... ${Math.round(progress)}%`);
-            }
-            if (!videoUrl) throw new Error('Timeout waiting for video.');
+            setStatus(`⏳ Task ${taskId} queued. Polling for completion...`);
+            const videoUrl = await pollTask(taskId);
             setProgress(100);
             setStatus('✅ Video ready!');
             videoOutput.src = videoUrl;
