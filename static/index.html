@@ -55,13 +55,8 @@
             margin-bottom: 4px;
             outline: none;
         }
-        input:focus, select:focus, textarea:focus {
-            border-color: #7fdbff;
-        }
-        textarea {
-            min-height: 80px;
-            resize: vertical;
-        }
+        input:focus, select:focus, textarea:focus { border-color: #7fdbff; }
+        textarea { min-height: 80px; resize: vertical; }
         button {
             background: #7fdbff;
             color: #0b0e14;
@@ -117,9 +112,7 @@
             width: auto;
         }
         .download-btn:hover { background: #6bb0ff; }
-        .model-select {
-            display: block;  /* Change to 'none' to hide model selection */
-        }
+        .model-select { display: block; }
         .error-box {
             padding: 12px;
             background: #3a1a1a;
@@ -145,10 +138,7 @@
             font-size: 11px;
             border: 1px solid #2a4a5a;
         }
-        .flex {
-            display: flex;
-            gap: 8px;
-        }
+        .flex { display: flex; gap: 8px; }
         .flex input { flex: 1; }
         .flex button { width: auto; margin-top: 0; }
     </style>
@@ -158,19 +148,18 @@
     <h1>🎬 Rehan Models</h1>
     <div class="sub">AI Video Generator</div>
 
-    <!-- ===================== API KEY ===================== -->
+    <!-- API Key -->
     <label>API Key</label>
     <input type="text" id="apiKey" placeholder="sk-..." value="sk-v3AY5kJOdHil90U8PcgqNCGYa39w3coiURlEAtbZBSmkSKCG">
 
-    <!-- ===================== PROMPT ===================== -->
+    <!-- Prompt -->
     <label>Prompt</label>
     <textarea id="prompt">a beautiful woman walking on a beach at sunset, cinematic, 4k</textarea>
 
-    <!-- ===================== MODEL SELECTION (can be hidden) ===================== -->
-    <div class="model-select" id="modelContainer">
+    <!-- Model Selection -->
+    <div class="model-select">
         <label>Model</label>
         <select id="modelSelect">
-            <!-- CHANGE THESE DISPLAY NAMES (keep the value attributes as they are) -->
             <option value="agnes-2.0-flash">Rehan Text Model</option>
             <option value="agnes-image-2.1-flash">Rehan Image Model</option>
             <option value="agnes-video-v2.0" selected>Rehan Video Model</option>
@@ -180,19 +169,19 @@
         </p>
     </div>
 
-    <!-- ===================== DURATION & RESOLUTION ===================== -->
+    <!-- Duration & Resolution -->
     <div class="flex">
         <input type="number" id="duration" value="5" placeholder="Duration (s)" min="1" max="30" style="flex:0 0 90px;">
         <input type="text" id="resolution" value="720p" placeholder="720p / 1080p">
     </div>
 
-    <!-- ===================== GENERATE BUTTON ===================== -->
+    <!-- Generate Button -->
     <button id="generateBtn">Generate Video</button>
 
     <div class="status" id="status">● ready</div>
     <div class="progress"><div class="fill" id="progressFill"></div></div>
 
-    <!-- ===================== VIDEO OUTPUT ===================== -->
+    <!-- Video Output -->
     <video id="videoOutput" controls autoplay loop playsinline></video>
     <div class="error-box" id="errorBox"></div>
     <button class="download-btn" id="downloadBtn">💾 Save Video</button>
@@ -205,14 +194,11 @@
 
 <script>
 // ================================================================
-//  AGNES VIDEO GENERATOR – CLEAN CLIENT
-//  Works with the backend running on Railway.
+//  AGNES VIDEO GENERATOR – WITH API KEY AUTO‑CONFIG
 // ================================================================
 
-// ----- Configuration -----
-const API_BASE = 'https://api.agnes-ai.com/v1/videos';  // Backend proxies this
+const API_BASE = ''; // relative path (same domain)
 
-// DOM refs
 const apiKeyInput = document.getElementById('apiKey');
 const promptInput = document.getElementById('prompt');
 const modelSelect = document.getElementById('modelSelect');
@@ -246,6 +232,20 @@ function hideError() {
     errorBox.style.display = 'none';
 }
 
+// ----- Set API Key on the server -----
+async function setApiKey(apiKey) {
+    const resp = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ api_key: apiKey })
+    });
+    if (!resp.ok) {
+        const err = await resp.text();
+        throw new Error(`Failed to set API key: ${err}`);
+    }
+    return true;
+}
+
 // ----- Generate video -----
 async function generateVideo() {
     if (isGenerating) return;
@@ -267,21 +267,22 @@ async function generateVideo() {
 
     isGenerating = true;
     generateBtn.disabled = true;
-    setStatus('⏳ Generating...');
+    setStatus('⏳ Setting API key...');
     setProgress(5);
     hideError();
     videoOutput.style.display = 'none';
     downloadBtn.style.display = 'none';
 
     try {
-        // The backend expects the API key in the headers, and the prompt, model, etc.
-        // Our backend (server.py) will forward to Agnes API.
-        // Since we're calling the backend directly (on the same domain), we use relative URL.
+        // 1. Send API key to server
+        await setApiKey(apiKey);
+        setStatus('⏳ Submitting task...');
+        setProgress(10);
+
+        // 2. Submit the generation task
         const response = await fetch('/api/tasks/simple', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 prompt: prompt,
                 mode: 't2v',
@@ -301,7 +302,6 @@ async function generateVideo() {
         setProgress(20);
 
         if (data.task_id) {
-            // Poll for completion
             const taskId = data.task_id;
             setStatus(`⏳ Rendering... (task ${taskId})`);
             let videoUrl = null;
@@ -315,7 +315,6 @@ async function generateVideo() {
                 const progress = pollData.progress || 0;
                 setProgress(20 + (progress * 0.8));
                 if (pollData.status === 'completed' && pollData.final_video_file) {
-                    // The backend returns a path, we need to serve it
                     videoUrl = `/api/video/${taskId}`;
                     break;
                 } else if (pollData.status === 'failed') {
@@ -360,7 +359,6 @@ promptInput.addEventListener('keydown', (e) => {
     }
 });
 
-// ----- Init -----
 setStatus('● ready');
 </script>
 </body>
