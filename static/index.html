@@ -225,10 +225,10 @@
     <label>API Key</label>
     <input type="text" id="apiKey" placeholder="sk-..." value="sk-v3AY5kJOdHil90U8PcgqNCGYa39w3coiURlEAtbZBSmkSKCG">
 
-    <!-- Mode Toggle -->
+    <!-- Mode Toggle with explicit onclick -->
     <div class="mode-toggle">
-        <button id="modeSimple" class="active">📹 Simple</button>
-        <button id="modeCreative">🎬 Creative (Scenes)</button>
+        <button id="modeSimple" class="active" onclick="switchMode('simple')">📹 Simple</button>
+        <button id="modeCreative" onclick="switchMode('creative')">🎬 Creative (Scenes)</button>
     </div>
 
     <!-- ============================================================ -->
@@ -423,6 +423,33 @@ function escapeHtml(text) {
 }
 
 // ============================================================
+// MODE SWITCH (exposed globally for onclick)
+// ============================================================
+
+function switchMode(mode) {
+    currentMode = mode;
+    if (mode === 'simple') {
+        modeSimple.classList.add('active');
+        modeCreative.classList.remove('active');
+        simpleMode.classList.remove('hidden');
+        creativeMode.classList.add('hidden');
+    } else {
+        modeCreative.classList.add('active');
+        modeSimple.classList.remove('active');
+        creativeMode.classList.remove('hidden');
+        simpleMode.classList.add('hidden');
+        if (scenes.length === 0) {
+            addScene('', 5);
+        }
+    }
+    console.log('Mode switched to:', mode);
+}
+
+// Also attach listeners for modern browsers (optional)
+modeSimple.addEventListener('click', function() { switchMode('simple'); });
+modeCreative.addEventListener('click', function() { switchMode('creative'); });
+
+// ============================================================
 // DURATION PRESETS
 // ============================================================
 
@@ -435,28 +462,8 @@ document.querySelectorAll('.scene-duration-preset button').forEach(btn => {
 });
 
 // ============================================================
-// MODE TOGGLE
+// ADD SCENE BUTTON
 // ============================================================
-
-modeSimple.addEventListener('click', function() {
-    currentMode = 'simple';
-    modeSimple.classList.add('active');
-    modeCreative.classList.remove('active');
-    simpleMode.classList.remove('hidden');
-    creativeMode.classList.add('hidden');
-});
-
-modeCreative.addEventListener('click', function() {
-    currentMode = 'creative';
-    modeCreative.classList.add('active');
-    modeSimple.classList.remove('active');
-    creativeMode.classList.remove('hidden');
-    simpleMode.classList.add('hidden');
-    // Add a default scene if none exist
-    if (scenes.length === 0) {
-        addScene('', 5);
-    }
-});
 
 addSceneBtn.addEventListener('click', function() {
     addScene('', 5);
@@ -610,13 +617,11 @@ async function generateVideo() {
             model: model,
         };
     } else {
-        // Creative mode
         const idea = creativeIdea.value.trim();
         if (!idea) {
             setStatus('❌ Please enter an idea.', true);
             return;
         }
-        // Build scenes array
         const sceneData = scenes.filter(s => s.prompt.trim());
         if (sceneData.length === 0) {
             setStatus('❌ Please add at least one scene.', true);
@@ -626,7 +631,6 @@ async function generateVideo() {
         const sceneDurations = sceneData.map(s => s.duration);
         const style = creativeStyle.value.trim() || '电影质感写实风格';
 
-        // Use the creative endpoint
         endpoint = '/api/tasks/creative';
         payload = {
             idea: idea,
@@ -639,36 +643,9 @@ async function generateVideo() {
             scene_count: sceneData.length,
             uniform_duration: false,
             scene_durations_json: JSON.stringify(sceneDurations),
-            // For each scene, we need to pass prompts – but the creative endpoint
-            // uses the idea to generate scenes. However, we want to use user prompts.
-            // We'll use the user_scene_prompts field (if available) or fallback to idea.
-            // We'll pass the scene prompts as a JSON array via a custom field.
-            // The server may not support user_scene_prompts, but we can try to pass them.
-            // Alternatively, we can use the manuscript endpoint or just the simple endpoint.
-            // Since the creative endpoint uses LLM to generate scenes, we'll pass the
-            // scene prompts as additional data.
-            // For now, we'll use the simple endpoint for each scene? No, that's not efficient.
-            // We'll use the creative endpoint and pass the scene prompts as a JSON string.
-            // If the server doesn't support this, it may ignore it.
-            // We'll use a workaround: pass the idea as the overall idea, and let the server
-            // generate the scenes. But we want to use the user's scene prompts.
-            // We'll use the manuscript endpoint instead – it allows custom scene prompts.
-            // Actually, the manuscript endpoint expects a manuscript_text.
-            // Let's use the creative endpoint with the scene prompts as a JSON string.
-            // We'll append the scene prompts to the idea.
-            const scenePrompts = sceneData.map(s => s.prompt).join('\n');
-            const combinedIdea = `${idea}\n\nScene prompts:\n${scenePrompts}`;
-            payload.idea = combinedIdea;
-            // We'll also pass the scene prompts as a separate field
-            payload.user_scene_prompts_json = JSON.stringify(sceneData.map(s => s.prompt));
+            user_scene_prompts_json: JSON.stringify(sceneData.map(s => s.prompt))
         };
     }
-
-    // If in creative mode, we've modified the payload to include scene data.
-    // The creative endpoint expects: idea, creative_name, style, chaining_mode,
-    // video_width, video_height, duration_source, scene_count, uniform_duration,
-    // scene_durations_json, and optionally user_scene_prompts_json.
-    // The server may not support user_scene_prompts_json, but we'll send it anyway.
 
     isGenerating = true;
     stopPolling = false;
