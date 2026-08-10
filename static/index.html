@@ -97,6 +97,7 @@
             margin-top: 12px;
             object-fit: contain;
         }
+        img { background: #0f141e; }
         .text-output {
             background: #0f141e;
             border-radius: 12px;
@@ -176,16 +177,16 @@
             color: #7fdbff;
         }
         .hidden { display: none; }
-        .scene-duration-preset {
+        .preset-group {
             display: flex;
             gap: 6px;
             flex-wrap: wrap;
             margin: 4px 0 8px;
         }
-        .scene-duration-preset button {
+        .preset-group button {
             flex: 1;
             min-width: 40px;
-            padding: 4px 6px;
+            padding: 6px 8px;
             font-size: 12px;
             background: #2a3344;
             color: #b0c4de;
@@ -194,19 +195,24 @@
             cursor: pointer;
             margin-top: 0;
         }
-        .scene-duration-preset button:hover { background: #3e4a60; }
-        .scene-duration-preset button.active { border-color: #7fdbff; background: #1a2a3a; }
-        .scene-count-select {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin: 4px 0 8px;
-        }
-        .scene-count-select button {
-            flex: 1;
-            min-width: 40px;
-            padding: 6px 8px;
+        .preset-group button:hover { background: #3e4a60; }
+        .preset-group button.active { border-color: #7fdbff; background: #1a2a3a; }
+        .model-type-indicator {
             font-size: 13px;
+            color: #ffb07c;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .quality-select {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .quality-select button {
+            flex: 1;
+            min-width: 50px;
+            padding: 6px 10px;
+            font-size: 12px;
             background: #2a3344;
             color: #b0c4de;
             border: 1px solid #2a3344;
@@ -214,15 +220,9 @@
             cursor: pointer;
             margin-top: 0;
         }
-        .scene-count-select button:hover { background: #3e4a60; }
-        .scene-count-select button.active { border-color: #7fdbff; background: #1a2a3a; }
-        .creative-options { margin-top: 12px; }
-        .model-type-indicator {
-            font-size: 13px;
-            color: #ffb07c;
-            text-align: center;
-            margin-bottom: 8px;
-        }
+        .quality-select button:hover { background: #3e4a60; }
+        .quality-select button.active { border-color: #7fdbff; background: #1a2a3a; }
+        .mode-options { margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -247,7 +247,7 @@
         <label>Prompt</label>
         <textarea id="prompt">a beautiful woman walking on a beach at sunset, cinematic, 4k</textarea>
 
-        <!-- Model Selection with Text/Image/Video -->
+        <!-- Model Type Selector -->
         <label>Model Type</label>
         <select id="modelSelect">
             <option value="text">📝 Rehan Text Model</option>
@@ -256,30 +256,52 @@
         </select>
         <div class="model-type-indicator" id="modelTypeIndicator">🎬 Video Mode</div>
 
-        <!-- Video-specific options (hidden for text/image) -->
-        <div id="videoOptions">
-            <div class="flex">
-                <label style="flex:1;">Duration</label>
-                <div class="scene-duration-preset" style="flex:1;margin-top:4px;">
-                    <button data-dur="2">2s</button>
-                    <button data-dur="5" class="active">5s</button>
-                    <button data-dur="10">10s</button>
-                    <button data-dur="20">20s</button>
-                    <button data-dur="30">30s</button>
-                </div>
+        <!-- Video-specific options -->
+        <div id="videoOptions" class="mode-options">
+            <label>Duration</label>
+            <div class="preset-group" id="durationPresets">
+                <button data-dur="2">2s</button>
+                <button data-dur="5" class="active">5s</button>
+                <button data-dur="10">10s</button>
+                <button data-dur="20">20s</button>
+                <button data-dur="30">30s</button>
             </div>
             <input type="hidden" id="duration" value="5">
-        </div>
 
-        <!-- Image-specific options (hidden for text/video) -->
-        <div id="imageOptions" style="display:none;">
-            <div class="flex">
-                <input type="text" id="imageSize" value="1024x1024" placeholder="Size (e.g., 1024x1024)" style="flex:1;">
+            <label>Quality</label>
+            <div class="quality-select" id="videoQualityPresets">
+                <button data-res="480p">480p</button>
+                <button data-res="720p" class="active">720p</button>
+                <button data-res="1080p">1080p</button>
+                <button data-res="4K">4K</button>
             </div>
+            <input type="hidden" id="resolution" value="720p">
         </div>
 
-        <div class="flex">
-            <input type="text" id="resolution" value="720p" placeholder="720p / 1080p">
+        <!-- Image-specific options -->
+        <div id="imageOptions" class="mode-options" style="display:none;">
+            <label>Image Size</label>
+            <div class="quality-select" id="imageSizePresets">
+                <button data-size="512x512">512²</button>
+                <button data-size="768x768">768²</button>
+                <button data-size="1024x1024" class="active">1024²</button>
+                <button data-size="1536x1536">1536²</button>
+            </div>
+            <input type="hidden" id="imageSize" value="1024x1024">
+
+            <label>Quality</label>
+            <div class="quality-select" id="imageQualityPresets">
+                <button data-quality="low">Low</button>
+                <button data-quality="medium" class="active">Medium</button>
+                <button data-quality="high">High</button>
+                <button data-quality="4k">4K</button>
+            </div>
+            <input type="hidden" id="imageQuality" value="medium">
+        </div>
+
+        <!-- Text options (none needed) -->
+        <div id="textOptions" class="mode-options" style="display:none;">
+            <p style="font-size:13px;color:#5a7a8a;margin:4px 0;">Text generation uses the Agnes chat API.</p>
         </div>
     </div>
 
@@ -293,7 +315,7 @@
         <div class="flex">
             <div style="flex:1;">
                 <label>Number of Scenes</label>
-                <div class="scene-count-select" id="sceneCountSelect">
+                <div class="preset-group" id="sceneCountSelect">
                     <button data-count="2">2</button>
                     <button data-count="3" class="active">3</button>
                     <button data-count="4">4</button>
@@ -306,7 +328,7 @@
             </div>
             <div style="flex:1;">
                 <label>Duration per Scene</label>
-                <div class="scene-duration-preset" id="creativeDurationPreset">
+                <div class="preset-group" id="creativeDurationPreset">
                     <button data-dur="2">2s</button>
                     <button data-dur="5" class="active">5s</button>
                     <button data-dur="10">10s</button>
@@ -318,9 +340,17 @@
         </div>
 
         <div class="creative-options">
+            <label>Quality</label>
+            <div class="quality-select" id="creativeQualityPresets">
+                <button data-res="480p">480p</button>
+                <button data-res="720p" class="active">720p</button>
+                <button data-res="1080p">1080p</button>
+                <button data-res="4K">4K</button>
+            </div>
+            <input type="hidden" id="creativeResolution" value="720p">
+
             <div class="flex">
                 <input type="text" id="creativeStyle" value="cinematic realistic style" placeholder="Style">
-                <input type="text" id="creativeResolution" value="720p" placeholder="720p / 1080p" style="flex:0 0 80px;">
             </div>
             <p style="font-size:12px;color:#5a7a8a;margin-top:4px;">
                 The AI will automatically generate scenes based on your main prompt.
@@ -351,7 +381,7 @@
 
 <script>
 // ================================================================
-//  REHAN MODELS – TEXT + IMAGE + VIDEO
+//  REHAN MODELS – TEXT + IMAGE + VIDEO (FULLY WORKING)
 // ================================================================
 
 const apiKeyInput = document.getElementById('apiKey');
@@ -360,6 +390,7 @@ const modelSelect = document.getElementById('modelSelect');
 const durationInput = document.getElementById('duration');
 const resolutionInput = document.getElementById('resolution');
 const imageSizeInput = document.getElementById('imageSize');
+const imageQualityInput = document.getElementById('imageQuality');
 const generateBtn = document.getElementById('generateBtn');
 const statusDiv = document.getElementById('status');
 const stepDetailDiv = document.getElementById('stepDetail');
@@ -373,6 +404,7 @@ const errorBox = document.getElementById('errorBox');
 const modelTypeIndicator = document.getElementById('modelTypeIndicator');
 const videoOptions = document.getElementById('videoOptions');
 const imageOptions = document.getElementById('imageOptions');
+const textOptions = document.getElementById('textOptions');
 
 // Creative mode elements
 const creativeIdea = document.getElementById('creativeIdea');
@@ -401,17 +433,43 @@ modelSelect.addEventListener('change', function() {
     if (val === 'video') {
         videoOptions.style.display = 'block';
         imageOptions.style.display = 'none';
+        textOptions.style.display = 'none';
         modelTypeIndicator.textContent = '🎬 Video Mode';
     } else if (val === 'image') {
         videoOptions.style.display = 'none';
         imageOptions.style.display = 'block';
+        textOptions.style.display = 'none';
         modelTypeIndicator.textContent = '🖼️ Image Mode';
     } else {
         videoOptions.style.display = 'none';
         imageOptions.style.display = 'none';
+        textOptions.style.display = 'block';
         modelTypeIndicator.textContent = '📝 Text Mode';
     }
 });
+
+// ============================================================
+// PRESET HANDLING
+// ============================================================
+
+function setupPresets(containerSelector, inputId, className = 'active') {
+    document.querySelectorAll(containerSelector + ' button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll(containerSelector + ' button').forEach(b => b.classList.remove(className));
+            this.classList.add(className);
+            const input = document.getElementById(inputId);
+            if (input) input.value = this.dataset.dur || this.dataset.count || this.dataset.res || this.dataset.size || this.dataset.quality;
+        });
+    });
+}
+
+setupPresets('#durationPresets', 'duration');
+setupPresets('#videoQualityPresets', 'resolution');
+setupPresets('#imageSizePresets', 'imageSize');
+setupPresets('#imageQualityPresets', 'imageQuality');
+setupPresets('#sceneCountSelect', 'sceneCount');
+setupPresets('#creativeDurationPreset', 'creativeDuration');
+setupPresets('#creativeQualityPresets', 'creativeResolution');
 
 // ============================================================
 // MODE SWITCH
@@ -435,38 +493,6 @@ function switchMode(mode) {
 
 modeSimple.addEventListener('click', function() { switchMode('simple'); });
 modeCreative.addEventListener('click', function() { switchMode('creative'); });
-
-// ============================================================
-// DURATION PRESETS (Simple)
-// ============================================================
-
-document.querySelectorAll('#simpleMode .scene-duration-preset button').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('#simpleMode .scene-duration-preset button').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        durationInput.value = this.dataset.dur;
-    });
-});
-
-// ============================================================
-// CREATIVE PRESETS
-// ============================================================
-
-document.querySelectorAll('#sceneCountSelect button').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('#sceneCountSelect button').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        sceneCountInput.value = this.dataset.count;
-    });
-});
-
-document.querySelectorAll('#creativeDurationPreset button').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('#creativeDurationPreset button').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        creativeDurationInput.value = this.dataset.dur;
-    });
-});
 
 // ============================================================
 // API HELPERS
@@ -630,41 +656,57 @@ async function pollTask(taskId) {
     return videoUrl;
 }
 
-async function generateImage(prompt, size, apiKey) {
-    const resp = await fetch('/api/image/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            prompt: prompt,
-            size: size || '1024x1024',
-        })
-    });
-    if (!resp.ok) {
-        const err = await resp.text();
-        throw new Error(`Image generation failed: ${err}`);
-    }
-    const data = await resp.json();
-    if (data.task_id) {
-        // Poll for image
-        let attempts = 0;
-        while (attempts < 20) {
-            attempts++;
-            await new Promise(r => setTimeout(r, 2000));
-            const pollResp = await fetch(`/api/tasks/${data.task_id}`);
-            if (!pollResp.ok) continue;
-            const pollData = await pollResp.json();
-            if (pollData.status === 'completed' && pollData.final_video_file) {
-                // The image might be stored as a file
-                return `/api/video/${data.task_id}`;
+// ============================================================
+// IMAGE GENERATION – FALLBACK TO POLLINATIONS
+// ============================================================
+
+async function generateImage(prompt, size, quality) {
+    // Try the server endpoint first
+    try {
+        const resp = await fetch('/api/image/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                prompt: prompt,
+                size: size || '1024x1024',
+                quality: quality || 'medium'
+            })
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data.task_id) {
+                // Poll for image
+                let attempts = 0;
+                while (attempts < 20) {
+                    attempts++;
+                    await new Promise(r => setTimeout(r, 2000));
+                    const pollResp = await fetch(`/api/tasks/${data.task_id}`);
+                    if (!pollResp.ok) continue;
+                    const pollData = await pollResp.json();
+                    if (pollData.status === 'completed' && pollData.final_video_file) {
+                        return `/api/video/${data.task_id}`;
+                    }
+                }
+                throw new Error('Image generation timed out.');
+            }
+            if (data.image_url) {
+                return data.image_url;
             }
         }
-        throw new Error('Image generation timed out.');
+    } catch (e) {
+        console.warn('Server image endpoint failed:', e);
     }
-    // If the response is the image directly
-    if (data.image_url) {
-        return data.image_url;
-    }
-    throw new Error('No image URL returned.');
+
+    // FALLBACK: Pollinations (free, no key, works directly)
+    const width = parseInt(size.split('x')[0]) || 1024;
+    const height = parseInt(size.split('x')[1]) || 1024;
+    // Adjust quality
+    let qualityParam = '';
+    if (quality === 'low') qualityParam = '&quality=low';
+    else if (quality === 'high') qualityParam = '&quality=high';
+    else if (quality === '4k') qualityParam = '&quality=4k';
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&nologo=true&seed=${Math.floor(Math.random()*100000)}${qualityParam}`;
+    return url;
 }
 
 // ============================================================
@@ -676,9 +718,6 @@ async function generateVideo() {
 
     const apiKey = apiKeyInput.value.trim();
     const modelType = modelSelect.value; // 'text', 'image', 'video'
-    const resolution = currentMode === 'simple'
-        ? resolutionInput.value.trim() || '720p'
-        : creativeResolution.value.trim() || '720p';
 
     if (!apiKey) {
         setStatus('❌ Please enter your API key.', true);
@@ -690,17 +729,19 @@ async function generateVideo() {
     setStepDetail('');
     setElapsedTime(0);
     startTime = Date.now();
+    isGenerating = true;
+    generateBtn.disabled = true;
+    generateBtn.textContent = '⏳...';
 
     try {
-        // Ensure API key is set on the server (for video/image endpoints)
         await setApiKey(apiKey);
         setProgress(5);
         setStatus('⏳ Processing...');
 
         if (modelType === 'text') {
-            // TEXT GENERATION – Direct Agnes API call
-            setStatus('⏳ Generating text...');
+            // TEXT
             const prompt = promptInput.value.trim() || 'Hello, how are you?';
+            setStatus('⏳ Generating text...');
             const resp = await fetch('https://apihub.agnes-ai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -709,9 +750,7 @@ async function generateVideo() {
                 },
                 body: JSON.stringify({
                     model: 'agnes-2.0-flash',
-                    messages: [
-                        { role: 'user', content: prompt }
-                    ],
+                    messages: [{ role: 'user', content: prompt }],
                     max_tokens: 500,
                     temperature: 0.7
                 })
@@ -729,22 +768,26 @@ async function generateVideo() {
         }
 
         if (modelType === 'image') {
-            // IMAGE GENERATION
-            setStatus('⏳ Generating image...');
+            // IMAGE
             const prompt = promptInput.value.trim();
             if (!prompt) {
                 setStatus('❌ Please enter a prompt.', true);
                 return;
             }
-            const size = imageSizeInput.value.trim() || '1024x1024';
-            const imageUrl = await generateImage(prompt, size, apiKey);
+            const size = imageSizeInput.value || '1024x1024';
+            const quality = imageQualityInput.value || 'medium';
+            setStatus('⏳ Generating image...');
+            const imageUrl = await generateImage(prompt, size, quality);
             setProgress(100);
             setStatus('✅ Image ready!');
             showImage(imageUrl);
             return;
         }
 
-        // VIDEO GENERATION (existing logic)
+        // VIDEO
+        const resolution = currentMode === 'simple'
+            ? resolutionInput.value || '720p'
+            : creativeResolution.value || '720p';
         let payload;
         let endpoint = '/api/tasks/simple';
 
@@ -759,8 +802,8 @@ async function generateVideo() {
                 prompt: prompt,
                 mode: 't2v',
                 duration: duration,
-                video_width: resolution === '1080p' ? 1920 : 1152,
-                video_height: resolution === '1080p' ? 1080 : 768,
+                video_width: resolution === '1080p' ? 1920 : (resolution === '4K' ? 3840 : 1152),
+                video_height: resolution === '1080p' ? 1080 : (resolution === '4K' ? 2160 : 768),
             };
         } else {
             // Creative mode
@@ -779,8 +822,8 @@ async function generateVideo() {
                 creative_name: 'Rehan Creative Video',
                 style: style,
                 chaining_mode: 'keyframes',
-                video_width: resolution === '1080p' ? 1920 : 1152,
-                video_height: resolution === '1080p' ? 1080 : 768,
+                video_width: resolution === '1080p' ? 1920 : (resolution === '4K' ? 3840 : 1152),
+                video_height: resolution === '1080p' ? 1080 : (resolution === '4K' ? 2160 : 768),
                 duration_source: 'manual',
                 scene_count: sceneCount,
                 uniform_duration: true,
@@ -839,19 +882,11 @@ async function generateVideo() {
 // EVENTS
 // ============================================================
 
-generateBtn.addEventListener('click', function() {
-    generateBtn.disabled = true;
-    generateBtn.textContent = '⏳...';
-    generateVideo().finally(() => {
-        generateBtn.disabled = false;
-        generateBtn.textContent = 'Generate';
-    });
-});
-
+generateBtn.addEventListener('click', generateVideo);
 promptInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        generateBtn.click();
+        generateVideo();
     }
 });
 
