@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>rehans Video Generator</title>
+<title>Agnes Video Generator</title>
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 <link rel="icon" type="image/png" sizes="1024x1024" href="/static/icon.png">
 <link rel="apple-touch-icon" href="/static/icon.png">
@@ -275,6 +275,9 @@
 
 <!-- Left sidebar -->
 
+  </div>
+</aside>
+
 <!-- Main content -->
 <div class="max-w-4xl flex-1 min-w-0 py-8">
 
@@ -307,13 +310,22 @@
       </select>
     </div>
     <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-300 to-amber-400 bg-clip-text text-transparent" style="filter: drop-shadow(0 0 20px rgba(59,130,246,0.2)); position: relative; z-index: 0;">
-      rehans Video Generator
+      Agnes Video Generator
     </h1>
     <p class="text-gray-500 mt-2 text-sm tracking-wide" data-i18n="subtitle">AI 视频，一键生成</p>
   </div>
 
   <!-- Resource links -->
   <nav class="flex justify-center items-center gap-4 mb-8 text-xs tracking-wide">
+    <a href="https://video.lichuanyang.top/demo" target="_blank" rel="noopener" class="flex items-center gap-1 text-amber-400/70 hover:text-amber-300 transition-colors">🎬 Demo</a>
+    <span class="text-white/5 select-none">·</span>
+    <a href="https://video.lichuanyang.top" target="_blank" rel="noopener" class="flex items-center gap-1 text-gray-500 hover:text-gray-300 transition-colors">🏠 Home</a>
+    <span class="text-white/5 select-none">·</span>
+    <a href="https://video.lichuanyang.top/guides/prompt-tips" target="_blank" rel="noopener" class="flex items-center gap-1 text-gray-500 hover:text-gray-300 transition-colors">📖 Guides</a>
+    <span class="text-white/5 select-none">·</span>
+    <a href="https://video.lichuanyang.top/faq" target="_blank" rel="noopener" class="flex items-center gap-1 text-gray-500 hover:text-gray-300 transition-colors">❓ FAQ</a>
+    <span class="text-white/5 select-none">·</span>
+    <a href="https://github.com/lcy362/agnes-video-generator" target="_blank" rel="noopener" class="flex items-center gap-1 text-gray-500 hover:text-gray-300 transition-colors">📖 GitHub</a>
   </nav>
 
   <!-- API Key -->
@@ -341,6 +353,9 @@
         <button id="apikey-clear" class="px-5 py-2.5 bg-red-600/80 hover:bg-red-500 rounded-lg text-sm font-medium transition hidden" data-i18n="clear">清除</button>
       </div>
       <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 mt-3 text-xs">
+        <a href="https://platform.agnes-ai.com" target="_blank" rel="noopener" class="text-amber-400/70 hover:text-amber-300 transition-colors">🚀 <span data-i18n="apiKeyGetLink">免费获取 API Key</span></a>
+        <a href="https://video.lichuanyang.top/guides/api-key" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-300 transition-colors">📖 <span data-i18n="apiKeyGuideLink">配置教程</span></a>
+        <a href="https://video.lichuanyang.top/demo" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-300 transition-colors">⚡ <span data-i18n="apiKeyDemoLink">不想配置？在线体验</span></a>
       </div>
     </div>
   </div>
@@ -1562,6 +1577,9 @@
 
 <!-- Right sidebar -->
 
+  </div>
+</aside>
+
 </div>
 
 <script>
@@ -1859,7 +1877,7 @@ const T = {
     workspaceRegressionHint: 'This is a regression test workspace, locked by environment variable and cannot be changed from the UI.',
     workspaceRemoveConfirm: 'Remove this working directory from the list? (Disk files are not deleted)',
     tabCreate: 'New Task', tabList: 'Task List',
-    watermarkTitle: 'Video Watermark', watermarkPromo: 'made by rehan do not press this button it will destroy everything',
+    watermarkTitle: 'Video Watermark', watermarkPromo: 'Add an Agnes Video Generator watermark to help more creators discover this tool',
     watermarkEnabled: 'Video watermark enabled', watermarkDisabled: 'Video watermark disabled',
     ttSimple: 'Image & Video', ttCreative: 'Creative Video', ttManuscript: 'Article Video',
     subModeLabel: 'Type', subModeVideo: '🎬 Video', subModeImage: '🖼️ Image',
@@ -1981,9 +1999,39 @@ const T = {
     artifactDeleted: 'Artifact deleted', artifactDeleteFailed: 'Delete failed',
     clickToPreview: 'Click to preview', 'delete': 'Delete',
     taskStarting: 'Task starting...',
+        apiKeyGetLink: 'Get a free API Key',
+        apiKeyGuideLink: 'Setup guide',
+        apiKeyDemoLink: 'Prefer not to configure? Try online',
+        formTipTips: '🎯 Prompt tips',
+        formTipModels: '🧠 Model comparison',
+        exampleLinkSimple: '📋 Simple video prompt examples',
+        exampleLinkCreative: '📋 Creative video prompt examples',
+        exampleLinkManuscript: '📋 Manuscript video examples',
+        exampleLinkAnchor: '📋 Digital anchor examples',
+        waitTip: '💡 While you wait, see what others create with Agnes',
+        doneTipTiktok: '📈 Social media playbook',
+        doneTipMore: '🎬 More creation ideas',
+    adSupportTitle: '⭐ Support the Project',
+    adSupportDesc: 'Completely free & open source, never charged. Support the project:',
+    adStar: '⭐ Give a Star',
+    adStarDesc: 'Help more people discover this tool',
+    adAdblock: '🔓 Disable AdBlock',
+    adAdblockDesc: 'Turn off ad blockers on the official site',
+    adClick: '👆 Click an ad',
+    adClickDesc: 'A small click, real support',
+    adThanks: 'Thank you for your support ❤️',
+    moreResources: 'More Resources',
+    projectHome: '🏠 Project Home',
+    onlineDemo: '🎬 Online Demo',
+    usageGuide: '📖 User Guide',
+    faqTitle: '❓ FAQ',
+    apiDocs: '📋 API Docs',
+    appScenarios: '🎯 Use Cases',
+    quickLinks: '🔗 Quick Links',
+    promptTips: '📖 Prompt Tips',
     modelOverview: '📚 Model Overview',
     apiCall: '📘 API Reference',
-    rateSlow: '-30% (slow)',
+    rateSlow: '-30% (Slow)',
     rateFast: '+30% (Fast)',
     ratePoem: '-15% (Poem recitation, slower)',
     resLandscapeHD: 'Landscape 16:9 (HD)',
@@ -2472,8 +2520,8 @@ const T = {
     advancedSettings: '고급 설정', optional: '선택', seedPlaceholder: '비우기=랜덤', negativePlaceholder: '제외 요소',
     taskName: '작업 이름', taskNamePlaceholder: '선택사항',
     ideaLabel: '아이디어', ideaPlaceholder: '폐허가 된 도시에서 작은 꽃에 물을 주는 로봇, 3개 장면: 새싹 발견 → 물 가져오기 → 꽃이 핌',
-    visualStyle: 'iiiopp
-    requirementDefault: '3개 장면, 각 5초, 영화 품질', styleDefaultjko: '영화 같은 사실적인 스타일',
+    visualStyle: '스타일',
+    requirementDefault: '3개 장면, 각 5초, 영화 품질', styleDefault: '영화 같은 사실적인 스타일',
     chainingMode: '체인', modeKeyframes: 'keyframes', modeTi2vid: 'ti2vid', modeNone: 'none',
     referenceImage: '참조 이미지', refDescription: '모든 장면의 시각 기준.',
     customEndFrames: '엔드 프레임', enableCustomEndFrames: '활성화',
@@ -8585,4 +8633,4 @@ document.getElementById('workspace-add').onclick = async () => {
 </div>
 
 </body>
-</html>
+</html> ha ha ha ha ha ha
