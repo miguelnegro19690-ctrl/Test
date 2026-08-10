@@ -92,12 +92,32 @@
             width: 100%;
             max-height: 380px;
             border-radius: 12px;
-            background: #000;
+            background: #0f141e;
             display: none;
             margin-top: 12px;
             object-fit: contain;
         }
-        img { background: #0f141e; }
+        .img-wrapper {
+            position: relative;
+            display: none;
+            margin-top: 12px;
+        }
+        .img-wrapper img {
+            display: block;
+            margin-top: 0;
+        }
+        .img-badge {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(11,14,20,0.8);
+            color: #7fdbff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            border: 1px solid #2a4a5a;
+            backdrop-filter: blur(4px);
+        }
         .text-output {
             background: #0f141e;
             border-radius: 12px;
@@ -368,7 +388,10 @@
 
     <!-- Output -->
     <video id="videoOutput" controls autoplay loop playsinline></video>
-    <img id="imageOutput" alt="Generated image" />
+    <div class="img-wrapper" id="imageWrapper">
+        <img id="imageOutput" alt="Generated image" />
+        <div class="img-badge" id="imageBadge">🔹 Rehan v2</div>
+    </div>
     <div class="text-output" id="textOutput"></div>
     <div class="error-box" id="errorBox"></div>
     <button class="download-btn" id="downloadBtn">💾 Save</button>
@@ -398,6 +421,8 @@ const elapsedTimeDiv = document.getElementById('elapsedTime');
 const progressFill = document.getElementById('progressFill');
 const videoOutput = document.getElementById('videoOutput');
 const imageOutput = document.getElementById('imageOutput');
+const imageWrapper = document.getElementById('imageWrapper');
+const imageBadge = document.getElementById('imageBadge');
 const textOutput = document.getElementById('textOutput');
 const downloadBtn = document.getElementById('downloadBtn');
 const errorBox = document.getElementById('errorBox');
@@ -528,7 +553,7 @@ function hideError() {
 
 function resetOutput() {
     videoOutput.style.display = 'none';
-    imageOutput.style.display = 'none';
+    imageWrapper.style.display = 'none';
     textOutput.style.display = 'none';
     downloadBtn.style.display = 'none';
     videoOutput.src = '';
@@ -551,9 +576,10 @@ function showVideo(url) {
     };
 }
 
-function showImage(url) {
+function showImage(url, fallback = false) {
     imageOutput.src = url;
-    imageOutput.style.display = 'block';
+    imageWrapper.style.display = 'block';
+    imageBadge.textContent = fallback ? '🔹 Rehan v2' : '🔹 Rehan Pro';
     downloadBtn.style.display = 'inline-block';
     downloadBtn.onclick = () => {
         const a = document.createElement('a');
@@ -562,6 +588,14 @@ function showImage(url) {
         document.body.appendChild(a);
         a.click();
         a.remove();
+    };
+    // Check if image loads
+    imageOutput.onerror = function() {
+        // If image fails, try Pollinations again with a different approach
+        console.warn('Image load failed, retrying Pollinations...');
+        const fallbackUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptInput.value.trim() || 'a beautiful scene')}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random()*100000)}`;
+        this.src = fallbackUrl;
+        imageBadge.textContent = '🔹 Rehan v2 (retry)';
     };
 }
 
@@ -662,6 +696,7 @@ async function pollTask(taskId) {
 
 async function generateImage(prompt, size, quality) {
     // Try the server endpoint first
+    let serverSuccess = false;
     try {
         const resp = await fetch('/api/image/generate', {
             method: 'POST',
@@ -684,13 +719,16 @@ async function generateImage(prompt, size, quality) {
                     if (!pollResp.ok) continue;
                     const pollData = await pollResp.json();
                     if (pollData.status === 'completed' && pollData.final_video_file) {
-                        return `/api/video/${data.task_id}`;
+                        const imageUrl = `/api/video/${data.task_id}`;
+                        serverSuccess = true;
+                        return { url: imageUrl, fallback: false };
                     }
                 }
                 throw new Error('Image generation timed out.');
             }
             if (data.image_url) {
-                return data.image_url;
+                serverSuccess = true;
+                return { url: data.image_url, fallback: false };
             }
         }
     } catch (e) {
@@ -698,15 +736,11 @@ async function generateImage(prompt, size, quality) {
     }
 
     // FALLBACK: Pollinations (free, no key, works directly)
+    console.log('Using Pollinations fallback for image');
     const width = parseInt(size.split('x')[0]) || 1024;
     const height = parseInt(size.split('x')[1]) || 1024;
-    // Adjust quality
-    let qualityParam = '';
-    if (quality === 'low') qualityParam = '&quality=low';
-    else if (quality === 'high') qualityParam = '&quality=high';
-    else if (quality === '4k') qualityParam = '&quality=4k';
-    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&nologo=true&seed=${Math.floor(Math.random()*100000)}${qualityParam}`;
-    return url;
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&nologo=true&seed=${Math.floor(Math.random()*100000)}`;
+    return { url, fallback: true };
 }
 
 // ============================================================
@@ -777,10 +811,10 @@ async function generateVideo() {
             const size = imageSizeInput.value || '1024x1024';
             const quality = imageQualityInput.value || 'medium';
             setStatus('⏳ Generating image...');
-            const imageUrl = await generateImage(prompt, size, quality);
+            const result = await generateImage(prompt, size, quality);
             setProgress(100);
             setStatus('✅ Image ready!');
-            showImage(imageUrl);
+            showImage(result.url, result.fallback);
             return;
         }
 
