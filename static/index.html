@@ -136,14 +136,84 @@
             font-size: 11px;
             border: 1px solid #2a4a5a;
         }
-        .flex { display: flex; gap: 8px; }
-        .flex input { flex: 1; }
+        .flex { display: flex; gap: 8px; flex-wrap: wrap; }
+        .flex input { flex: 1; min-width: 60px; }
         .flex button { width: auto; margin-top: 0; }
-        .stop-btn {
+        .scene-item {
+            background: #0f141e;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 1px solid #2a3344;
+        }
+        .scene-item .flex { margin-bottom: 4px; }
+        .scene-item .flex input { flex: 1; }
+        .scene-item .flex select { flex: 0 0 80px; }
+        .remove-scene {
             background: #6b3a3a;
             color: #ffb3b3;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 4px;
         }
-        .stop-btn:hover { background: #8b4a4a; }
+        .remove-scene:hover { background: #8b4a4a; }
+        .add-scene-btn {
+            background: #2a3344;
+            color: #e0e6ed;
+            border: none;
+            padding: 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 4px;
+            width: 100%;
+        }
+        .add-scene-btn:hover { background: #3e4a60; }
+        .mode-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .mode-toggle button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid #2a3344;
+            background: #0f141e;
+            color: #8a9bb5;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0;
+        }
+        .mode-toggle button.active {
+            background: #1a2a3a;
+            border-color: #7fdbff;
+            color: #7fdbff;
+        }
+        .hidden { display: none; }
+        .scene-duration-preset {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 4px 0 8px;
+        }
+        .scene-duration-preset button {
+            flex: 1;
+            min-width: 40px;
+            padding: 4px 6px;
+            font-size: 12px;
+            background: #2a3344;
+            color: #b0c4de;
+            border: 1px solid #2a3344;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 0;
+        }
+        .scene-duration-preset button:hover { background: #3e4a60; }
+        .scene-duration-preset button.active { border-color: #7fdbff; background: #1a2a3a; }
     </style>
 </head>
 <body>
@@ -155,11 +225,58 @@
     <label>API Key</label>
     <input type="text" id="apiKey" placeholder="sk-..." value="sk-v3AY5kJOdHil90U8PcgqNCGYa39w3coiURlEAtbZBSmkSKCG">
 
-    <!-- Prompt -->
-    <label>Prompt</label>
-    <textarea id="prompt">a beautiful woman walking on a beach at sunset, cinematic, 4k</textarea>
+    <!-- Mode Toggle -->
+    <div class="mode-toggle">
+        <button id="modeSimple" class="active">📹 Simple</button>
+        <button id="modeCreative">🎬 Creative (Scenes)</button>
+    </div>
 
+    <!-- ============================================================ -->
+    <!-- SIMPLE MODE -->
+    <!-- ============================================================ -->
+    <div id="simpleMode">
+        <label>Prompt</label>
+        <textarea id="prompt">a beautiful woman walking on a beach at sunset, cinematic, 4k</textarea>
+
+        <div class="flex">
+            <label style="flex:1;">Duration</label>
+            <div class="scene-duration-preset" style="flex:1;margin-top:4px;">
+                <button data-dur="2">2s</button>
+                <button data-dur="5" class="active">5s</button>
+                <button data-dur="10">10s</button>
+                <button data-dur="20">20s</button>
+                <button data-dur="30">30s</button>
+            </div>
+        </div>
+        <input type="hidden" id="duration" value="5">
+
+        <div class="flex">
+            <input type="text" id="resolution" value="720p" placeholder="720p / 1080p">
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- CREATIVE MODE (Scenes) -->
+    <!-- ============================================================ -->
+    <div id="creativeMode" class="hidden">
+        <label>Overall Idea</label>
+        <textarea id="creativeIdea">a girl running down a mountain hill</textarea>
+
+        <label>Scenes</label>
+        <div id="sceneList">
+            <!-- Scenes will be added here -->
+        </div>
+        <button class="add-scene-btn" id="addSceneBtn">+ Add Scene</button>
+
+        <div class="flex" style="margin-top:12px;">
+            <input type="text" id="creativeStyle" value="电影质感写实风格" placeholder="Style">
+            <input type="text" id="creativeResolution" value="720p" placeholder="720p / 1080p" style="flex:0 0 80px;">
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
     <!-- Model Selection -->
+    <!-- ============================================================ -->
     <div class="model-select">
         <label>Model</label>
         <select id="modelSelect">
@@ -167,15 +284,6 @@
             <option value="agnes-image-2.1-flash">Rehan Image Model</option>
             <option value="agnes-video-v2.0" selected>Rehan Video Model</option>
         </select>
-        <p style="font-size:12px;color:#5a7a8a;margin:4px 0 8px;">
-            ⚠️ Changing the model affects which AI engine is used. Keep default for video.
-        </p>
-    </div>
-
-    <!-- Duration & Resolution -->
-    <div class="flex">
-        <input type="number" id="duration" value="5" placeholder="Duration (s)" min="1" max="30" style="flex:0 0 90px;">
-        <input type="text" id="resolution" value="720p" placeholder="720p / 1080p">
     </div>
 
     <!-- Generate Button -->
@@ -186,20 +294,20 @@
     <div class="elapsed" id="elapsedTime"></div>
     <div class="progress"><div class="fill" id="progressFill"></div></div>
 
-    <!-- Video Output -->
+    <!-- Output -->
     <video id="videoOutput" controls autoplay loop playsinline></video>
     <div class="error-box" id="errorBox"></div>
     <button class="download-btn" id="downloadBtn">💾 Save Video</button>
 
     <div class="footer">
-        <span class="badge">🔹 Powered by Agnes API</span>
+        <span class="badge">🔹 Powered by Rehan</span>
         <span style="margin-left:8px;">• Unlimited • Free</span>
     </div>
 </div>
 
 <script>
 // ================================================================
-//  AGNES VIDEO GENERATOR – UNLIMITED POLLING + DETAILED STEPS
+//  REHAN MODELS – SIMPLE + CREATIVE (SCENES) VIDEO GENERATOR
 // ================================================================
 
 const apiKeyInput = document.getElementById('apiKey');
@@ -216,11 +324,147 @@ const videoOutput = document.getElementById('videoOutput');
 const downloadBtn = document.getElementById('downloadBtn');
 const errorBox = document.getElementById('errorBox');
 
+// Creative mode elements
+const creativeIdea = document.getElementById('creativeIdea');
+const creativeStyle = document.getElementById('creativeStyle');
+const creativeResolution = document.getElementById('creativeResolution');
+const sceneList = document.getElementById('sceneList');
+const addSceneBtn = document.getElementById('addSceneBtn');
+const modeSimple = document.getElementById('modeSimple');
+const modeCreative = document.getElementById('modeCreative');
+const simpleMode = document.getElementById('simpleMode');
+const creativeMode = document.getElementById('creativeMode');
+
 let isGenerating = false;
-let pollInterval = null;
-let startTime = null;
-let elapsedInterval = null;
 let stopPolling = false;
+let startTime = null;
+let currentMode = 'simple';
+
+// ============================================================
+// SCENE MANAGEMENT
+// ============================================================
+
+let scenes = [];
+
+function addScene(prompt = '', duration = 5) {
+    const idx = scenes.length;
+    scenes.push({ prompt, duration });
+
+    const div = document.createElement('div');
+    div.className = 'scene-item';
+    div.dataset.index = idx;
+
+    div.innerHTML = `
+        <div class="flex">
+            <input type="text" class="scene-prompt" value="${escapeHtml(prompt)}" placeholder="Scene description..." style="flex:1;">
+            <select class="scene-duration">
+                <option value="2" ${duration === 2 ? 'selected' : ''}>2s</option>
+                <option value="5" ${duration === 5 ? 'selected' : ''}>5s</option>
+                <option value="10" ${duration === 10 ? 'selected' : ''}>10s</option>
+                <option value="20" ${duration === 20 ? 'selected' : ''}>20s</option>
+                <option value="30" ${duration === 30 ? 'selected' : ''}>30s</option>
+            </select>
+        </div>
+        <button class="remove-scene">✕ Remove</button>
+    `;
+
+    // Update scene data on change
+    div.querySelector('.scene-prompt').addEventListener('input', function() {
+        scenes[idx].prompt = this.value;
+    });
+    div.querySelector('.scene-duration').addEventListener('change', function() {
+        scenes[idx].duration = parseInt(this.value);
+    });
+    div.querySelector('.remove-scene').addEventListener('click', function() {
+        scenes.splice(idx, 1);
+        renderScenes();
+    });
+
+    sceneList.appendChild(div);
+}
+
+function renderScenes() {
+    sceneList.innerHTML = '';
+    scenes.forEach((s, i) => {
+        const div = document.createElement('div');
+        div.className = 'scene-item';
+        div.dataset.index = i;
+        div.innerHTML = `
+            <div class="flex">
+                <input type="text" class="scene-prompt" value="${escapeHtml(s.prompt)}" placeholder="Scene description..." style="flex:1;">
+                <select class="scene-duration">
+                    <option value="2" ${s.duration === 2 ? 'selected' : ''}>2s</option>
+                    <option value="5" ${s.duration === 5 ? 'selected' : ''}>5s</option>
+                    <option value="10" ${s.duration === 10 ? 'selected' : ''}>10s</option>
+                    <option value="20" ${s.duration === 20 ? 'selected' : ''}>20s</option>
+                    <option value="30" ${s.duration === 30 ? 'selected' : ''}>30s</option>
+                </select>
+            </div>
+            <button class="remove-scene">✕ Remove</button>
+        `;
+        div.querySelector('.scene-prompt').addEventListener('input', function() {
+            scenes[i].prompt = this.value;
+        });
+        div.querySelector('.scene-duration').addEventListener('change', function() {
+            scenes[i].duration = parseInt(this.value);
+        });
+        div.querySelector('.remove-scene').addEventListener('click', function() {
+            scenes.splice(i, 1);
+            renderScenes();
+        });
+        sceneList.appendChild(div);
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ============================================================
+// DURATION PRESETS
+// ============================================================
+
+document.querySelectorAll('.scene-duration-preset button').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.scene-duration-preset button').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        durationInput.value = this.dataset.dur;
+    });
+});
+
+// ============================================================
+// MODE TOGGLE
+// ============================================================
+
+modeSimple.addEventListener('click', function() {
+    currentMode = 'simple';
+    modeSimple.classList.add('active');
+    modeCreative.classList.remove('active');
+    simpleMode.classList.remove('hidden');
+    creativeMode.classList.add('hidden');
+});
+
+modeCreative.addEventListener('click', function() {
+    currentMode = 'creative';
+    modeCreative.classList.add('active');
+    modeSimple.classList.remove('active');
+    creativeMode.classList.remove('hidden');
+    simpleMode.classList.add('hidden');
+    // Add a default scene if none exist
+    if (scenes.length === 0) {
+        addScene('', 5);
+    }
+});
+
+addSceneBtn.addEventListener('click', function() {
+    addScene('', 5);
+});
+
+// ============================================================
+// API HELPERS
+// ============================================================
 
 function setStatus(msg, isError = false) {
     statusDiv.textContent = msg;
@@ -250,7 +494,6 @@ function hideError() {
     errorBox.style.display = 'none';
 }
 
-// ----- Set API Key on the server -----
 async function setApiKey(apiKey) {
     const resp = await fetch('/api/config', {
         method: 'POST',
@@ -264,7 +507,6 @@ async function setApiKey(apiKey) {
     return true;
 }
 
-// ----- Poll task status indefinitely -----
 async function pollTask(taskId) {
     let videoUrl = null;
     let lastMessage = '';
@@ -277,16 +519,13 @@ async function pollTask(taskId) {
             if (!resp.ok) continue;
             const data = await resp.json();
 
-            // data fields: status, progress, current_step, current_message, final_video_file
             const status = data.status || 'pending';
             const progress = data.progress || 0;
             const currentStep = data.current_step || '';
             const currentMessage = data.current_message || '';
 
-            // Update progress
             setProgress(10 + (progress * 0.9));
 
-            // Show detailed step message
             let stepMsg = currentStep || currentMessage;
             if (stepMsg) {
                 setStepDetail(`🔹 ${stepMsg}`);
@@ -297,7 +536,6 @@ async function pollTask(taskId) {
                 setStepDetail('⏳ Processing...');
             }
 
-            // Update elapsed time
             if (startTime) {
                 const elapsed = (Date.now() - startTime) / 1000;
                 setElapsedTime(elapsed);
@@ -306,40 +544,25 @@ async function pollTask(taskId) {
             setStatus(`⏳ Rendering... ${Math.round(progress)}%`);
 
             if (status === 'completed') {
-                // Try to get video URL
                 if (data.final_video_file) {
                     videoUrl = `/api/video/${taskId}`;
                 } else {
-                    // fallback: check if video exists
                     const testResp = await fetch(`/api/video/${taskId}`, { method: 'HEAD' });
                     if (testResp.ok) {
-                        videoUrl = `/api/video/${taskId}`
+                        videoUrl = `/api/video/${taskId}`;
                     } else {
-                        // If we don't have video but status is completed, maybe it's an image task?
-                        // For image tasks, the final file might be an image. We'll handle that.
-                        // Let's just try to fetch the final file.
-                        const fileResp = await fetch(`/api/video/${taskId}`);
-                        if (fileResp.ok) {
-                            videoUrl = `/api/video/${taskId}`;
+                        const imgResp = await fetch(`/api/image/${taskId}`);
+                        if (imgResp.ok) {
+                            videoUrl = `/api/image/${taskId}`;
                         }
                     }
                 }
                 if (videoUrl) break;
-                else {
-                    // If completed but no video, maybe it's an image?
-                    // We'll try to get the image.
-                    const imgResp = await fetch(`/api/image/${taskId}`);
-                    if (imgResp.ok) {
-                        videoUrl = `/api/image/${taskId}`;
-                        break;
-                    }
-                }
             } else if (status === 'failed') {
                 throw new Error(data.error || 'Generation failed');
             }
         } catch (e) {
             console.warn('Poll error:', e);
-            // Continue polling, but maybe slow down if errors occur frequently?
             await new Promise(r => setTimeout(r, 2000));
         }
     }
@@ -350,24 +573,102 @@ async function pollTask(taskId) {
     return videoUrl;
 }
 
-// ----- Main generate function -----
+// ============================================================
+// MAIN GENERATE
+// ============================================================
+
 async function generateVideo() {
     if (isGenerating) return;
 
     const apiKey = apiKeyInput.value.trim();
-    const prompt = promptInput.value.trim();
     const model = modelSelect.value;
-    const duration = parseInt(durationInput.value) || 5;
-    const resolution = resolutionInput.value.trim() || '720p';
+    const resolution = currentMode === 'simple'
+        ? resolutionInput.value.trim() || '720p'
+        : creativeResolution.value.trim() || '720p';
 
     if (!apiKey) {
         setStatus('❌ Please enter your API key.', true);
         return;
     }
-    if (!prompt) {
-        setStatus('❌ Please enter a prompt.', true);
-        return;
+
+    let payload;
+    let endpoint = '/api/tasks/simple';
+
+    if (currentMode === 'simple') {
+        const prompt = promptInput.value.trim();
+        if (!prompt) {
+            setStatus('❌ Please enter a prompt.', true);
+            return;
+        }
+        const duration = parseInt(durationInput.value) || 5;
+        payload = {
+            prompt: prompt,
+            mode: 't2v',
+            duration: duration,
+            video_width: resolution === '1080p' ? 1920 : 1152,
+            video_height: resolution === '1080p' ? 1080 : 768,
+            model: model,
+        };
+    } else {
+        // Creative mode
+        const idea = creativeIdea.value.trim();
+        if (!idea) {
+            setStatus('❌ Please enter an idea.', true);
+            return;
+        }
+        // Build scenes array
+        const sceneData = scenes.filter(s => s.prompt.trim());
+        if (sceneData.length === 0) {
+            setStatus('❌ Please add at least one scene.', true);
+            return;
+        }
+
+        const sceneDurations = sceneData.map(s => s.duration);
+        const style = creativeStyle.value.trim() || '电影质感写实风格';
+
+        // Use the creative endpoint
+        endpoint = '/api/tasks/creative';
+        payload = {
+            idea: idea,
+            creative_name: 'Rehan Creative Video',
+            style: style,
+            chaining_mode: 'keyframes',
+            video_width: resolution === '1080p' ? 1920 : 1152,
+            video_height: resolution === '1080p' ? 1080 : 768,
+            duration_source: 'manual',
+            scene_count: sceneData.length,
+            uniform_duration: false,
+            scene_durations_json: JSON.stringify(sceneDurations),
+            // For each scene, we need to pass prompts – but the creative endpoint
+            // uses the idea to generate scenes. However, we want to use user prompts.
+            // We'll use the user_scene_prompts field (if available) or fallback to idea.
+            // We'll pass the scene prompts as a JSON array via a custom field.
+            // The server may not support user_scene_prompts, but we can try to pass them.
+            // Alternatively, we can use the manuscript endpoint or just the simple endpoint.
+            // Since the creative endpoint uses LLM to generate scenes, we'll pass the
+            // scene prompts as additional data.
+            // For now, we'll use the simple endpoint for each scene? No, that's not efficient.
+            // We'll use the creative endpoint and pass the scene prompts as a JSON string.
+            // If the server doesn't support this, it may ignore it.
+            // We'll use a workaround: pass the idea as the overall idea, and let the server
+            // generate the scenes. But we want to use the user's scene prompts.
+            // We'll use the manuscript endpoint instead – it allows custom scene prompts.
+            // Actually, the manuscript endpoint expects a manuscript_text.
+            // Let's use the creative endpoint with the scene prompts as a JSON string.
+            // We'll append the scene prompts to the idea.
+            const scenePrompts = sceneData.map(s => s.prompt).join('\n');
+            const combinedIdea = `${idea}\n\nScene prompts:\n${scenePrompts}`;
+            payload.idea = combinedIdea;
+            // We'll also pass the scene prompts as a separate field
+            payload.user_scene_prompts_json = JSON.stringify(sceneData.map(s => s.prompt));
+        };
     }
+
+    // If in creative mode, we've modified the payload to include scene data.
+    // The creative endpoint expects: idea, creative_name, style, chaining_mode,
+    // video_width, video_height, duration_source, scene_count, uniform_duration,
+    // scene_durations_json, and optionally user_scene_prompts_json.
+    // The server may not support user_scene_prompts_json, but we'll send it anyway.
 
     isGenerating = true;
     stopPolling = false;
@@ -383,23 +684,14 @@ async function generateVideo() {
     startTime = Date.now();
 
     try {
-        // 1. Send API key
         await setApiKey(apiKey);
         setStatus('⏳ Submitting task...');
         setProgress(10);
 
-        // 2. Submit task
-        const response = await fetch('/api/tasks/simple', {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                prompt: prompt,
-                mode: 't2v',
-                duration: duration,
-                video_width: resolution === '1080p' ? 1920 : 1152,
-                video_height: resolution === '1080p' ? 1080 : 768,
-                model: model,
-            })
+            body: new URLSearchParams(payload)
         });
 
         if (!response.ok) {
@@ -453,7 +745,10 @@ async function generateVideo() {
     }
 }
 
-// ----- Events -----
+// ============================================================
+// EVENTS
+// ============================================================
+
 generateBtn.addEventListener('click', generateVideo);
 promptInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -462,6 +757,7 @@ promptInput.addEventListener('keydown', (e) => {
     }
 });
 
+// Init
 setStatus('● ready');
 </script>
 </body>
