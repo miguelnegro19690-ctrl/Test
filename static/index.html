@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rehan Models – AI Video</title>
+    <title>Rehan Models – AI Studio</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -88,13 +88,28 @@
             border-radius: 4px;
             transition: width 0.3s;
         }
-        video {
+        video, img {
             width: 100%;
             max-height: 380px;
             border-radius: 12px;
             background: #000;
             display: none;
             margin-top: 12px;
+            object-fit: contain;
+        }
+        .text-output {
+            background: #0f141e;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #2a3344;
+            color: #e0e6ed;
+            font-size: 15px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            display: none;
+            margin-top: 12px;
+            min-height: 100px;
         }
         .download-btn {
             background: #4a9eff;
@@ -202,12 +217,18 @@
         .scene-count-select button:hover { background: #3e4a60; }
         .scene-count-select button.active { border-color: #7fdbff; background: #1a2a3a; }
         .creative-options { margin-top: 12px; }
+        .model-type-indicator {
+            font-size: 13px;
+            color: #ffb07c;
+            text-align: center;
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>🎬 Rehan Models</h1>
-    <div class="sub">AI Video Generator</div>
+    <div class="sub">AI Studio – Text • Image • Video</div>
 
     <!-- API Key -->
     <label>API Key</label>
@@ -226,17 +247,36 @@
         <label>Prompt</label>
         <textarea id="prompt">a beautiful woman walking on a beach at sunset, cinematic, 4k</textarea>
 
-        <div class="flex">
-            <label style="flex:1;">Duration</label>
-            <div class="scene-duration-preset" style="flex:1;margin-top:4px;">
-                <button data-dur="2">2s</button>
-                <button data-dur="5" class="active">5s</button>
-                <button data-dur="10">10s</button>
-                <button data-dur="20">20s</button>
-                <button data-dur="30">30s</button>
+        <!-- Model Selection with Text/Image/Video -->
+        <label>Model Type</label>
+        <select id="modelSelect">
+            <option value="text">📝 Rehan Text Model</option>
+            <option value="image">🖼️ Rehan Image Model</option>
+            <option value="video" selected>🎬 Rehan Video Model</option>
+        </select>
+        <div class="model-type-indicator" id="modelTypeIndicator">🎬 Video Mode</div>
+
+        <!-- Video-specific options (hidden for text/image) -->
+        <div id="videoOptions">
+            <div class="flex">
+                <label style="flex:1;">Duration</label>
+                <div class="scene-duration-preset" style="flex:1;margin-top:4px;">
+                    <button data-dur="2">2s</button>
+                    <button data-dur="5" class="active">5s</button>
+                    <button data-dur="10">10s</button>
+                    <button data-dur="20">20s</button>
+                    <button data-dur="30">30s</button>
+                </div>
+            </div>
+            <input type="hidden" id="duration" value="5">
+        </div>
+
+        <!-- Image-specific options (hidden for text/video) -->
+        <div id="imageOptions" style="display:none;">
+            <div class="flex">
+                <input type="text" id="imageSize" value="1024x1024" placeholder="Size (e.g., 1024x1024)" style="flex:1;">
             </div>
         </div>
-        <input type="hidden" id="duration" value="5">
 
         <div class="flex">
             <input type="text" id="resolution" value="720p" placeholder="720p / 1080p">
@@ -288,20 +328,8 @@
         </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- Model Selection -->
-    <!-- ============================================================ -->
-    <div class="model-select">
-        <label>Model</label>
-        <select id="modelSelect">
-            <option value="agnes-2.0-flash">Rehan Text Model</option>
-            <option value="agnes-image-2.1-flash">Rehan Image Model</option>
-            <option value="agnes-video-v2.0" selected>Rehan Video Model</option>
-        </select>
-    </div>
-
     <!-- Generate Button -->
-    <button id="generateBtn">Generate Video</button>
+    <button id="generateBtn">Generate</button>
 
     <div class="status" id="status">● ready</div>
     <div class="step-detail" id="stepDetail"></div>
@@ -310,8 +338,10 @@
 
     <!-- Output -->
     <video id="videoOutput" controls autoplay loop playsinline></video>
+    <img id="imageOutput" alt="Generated image" />
+    <div class="text-output" id="textOutput"></div>
     <div class="error-box" id="errorBox"></div>
-    <button class="download-btn" id="downloadBtn">💾 Save Video</button>
+    <button class="download-btn" id="downloadBtn">💾 Save</button>
 
     <div class="footer">
         <span class="badge">🔹 Powered by Rehan</span>
@@ -321,7 +351,7 @@
 
 <script>
 // ================================================================
-//  REHAN MODELS – SIMPLE + CREATIVE (AUTO-GENERATED SCENES)
+//  REHAN MODELS – TEXT + IMAGE + VIDEO
 // ================================================================
 
 const apiKeyInput = document.getElementById('apiKey');
@@ -329,14 +359,20 @@ const promptInput = document.getElementById('prompt');
 const modelSelect = document.getElementById('modelSelect');
 const durationInput = document.getElementById('duration');
 const resolutionInput = document.getElementById('resolution');
+const imageSizeInput = document.getElementById('imageSize');
 const generateBtn = document.getElementById('generateBtn');
 const statusDiv = document.getElementById('status');
 const stepDetailDiv = document.getElementById('stepDetail');
 const elapsedTimeDiv = document.getElementById('elapsedTime');
 const progressFill = document.getElementById('progressFill');
 const videoOutput = document.getElementById('videoOutput');
+const imageOutput = document.getElementById('imageOutput');
+const textOutput = document.getElementById('textOutput');
 const downloadBtn = document.getElementById('downloadBtn');
 const errorBox = document.getElementById('errorBox');
+const modelTypeIndicator = document.getElementById('modelTypeIndicator');
+const videoOptions = document.getElementById('videoOptions');
+const imageOptions = document.getElementById('imageOptions');
 
 // Creative mode elements
 const creativeIdea = document.getElementById('creativeIdea');
@@ -353,6 +389,29 @@ let isGenerating = false;
 let stopPolling = false;
 let startTime = null;
 let currentMode = 'simple';
+let currentModel = 'video';
+
+// ============================================================
+// MODEL SELECTION LOGIC
+// ============================================================
+
+modelSelect.addEventListener('change', function() {
+    const val = this.value;
+    currentModel = val;
+    if (val === 'video') {
+        videoOptions.style.display = 'block';
+        imageOptions.style.display = 'none';
+        modelTypeIndicator.textContent = '🎬 Video Mode';
+    } else if (val === 'image') {
+        videoOptions.style.display = 'none';
+        imageOptions.style.display = 'block';
+        modelTypeIndicator.textContent = '🖼️ Image Mode';
+    } else {
+        videoOptions.style.display = 'none';
+        imageOptions.style.display = 'none';
+        modelTypeIndicator.textContent = '📝 Text Mode';
+    }
+});
 
 // ============================================================
 // MODE SWITCH
@@ -374,12 +433,23 @@ function switchMode(mode) {
     console.log('Mode switched to:', mode);
 }
 
-// Attach listeners
 modeSimple.addEventListener('click', function() { switchMode('simple'); });
 modeCreative.addEventListener('click', function() { switchMode('creative'); });
 
 // ============================================================
-// SCENE COUNT PRESETS
+// DURATION PRESETS (Simple)
+// ============================================================
+
+document.querySelectorAll('#simpleMode .scene-duration-preset button').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('#simpleMode .scene-duration-preset button').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        durationInput.value = this.dataset.dur;
+    });
+});
+
+// ============================================================
+// CREATIVE PRESETS
 // ============================================================
 
 document.querySelectorAll('#sceneCountSelect button').forEach(btn => {
@@ -390,27 +460,11 @@ document.querySelectorAll('#sceneCountSelect button').forEach(btn => {
     });
 });
 
-// ============================================================
-// CREATIVE DURATION PRESETS
-// ============================================================
-
 document.querySelectorAll('#creativeDurationPreset button').forEach(btn => {
     btn.addEventListener('click', function() {
         document.querySelectorAll('#creativeDurationPreset button').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         creativeDurationInput.value = this.dataset.dur;
-    });
-});
-
-// ============================================================
-// SIMPLE DURATION PRESETS
-// ============================================================
-
-document.querySelectorAll('.scene-duration-preset:not(#creativeDurationPreset) button').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.scene-duration-preset:not(#creativeDurationPreset) button').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        durationInput.value = this.dataset.dur;
     });
 });
 
@@ -444,6 +498,62 @@ function showError(msg) {
 
 function hideError() {
     errorBox.style.display = 'none';
+}
+
+function resetOutput() {
+    videoOutput.style.display = 'none';
+    imageOutput.style.display = 'none';
+    textOutput.style.display = 'none';
+    downloadBtn.style.display = 'none';
+    videoOutput.src = '';
+    imageOutput.src = '';
+    textOutput.textContent = '';
+}
+
+function showVideo(url) {
+    videoOutput.src = url;
+    videoOutput.style.display = 'block';
+    downloadBtn.style.display = 'inline-block';
+    videoOutput.load();
+    downloadBtn.onclick = () => {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'video.mp4';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    };
+}
+
+function showImage(url) {
+    imageOutput.src = url;
+    imageOutput.style.display = 'block';
+    downloadBtn.style.display = 'inline-block';
+    downloadBtn.onclick = () => {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'image.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    };
+}
+
+function showText(text) {
+    textOutput.textContent = text;
+    textOutput.style.display = 'block';
+    downloadBtn.style.display = 'inline-block';
+    downloadBtn.onclick = () => {
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'text.txt';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    };
 }
 
 async function setApiKey(apiKey) {
@@ -502,11 +612,6 @@ async function pollTask(taskId) {
                     const testResp = await fetch(`/api/video/${taskId}`, { method: 'HEAD' });
                     if (testResp.ok) {
                         videoUrl = `/api/video/${taskId}`;
-                    } else {
-                        const imgResp = await fetch(`/api/image/${taskId}`);
-                        if (imgResp.ok) {
-                            videoUrl = `/api/image/${taskId}`;
-                        }
                     }
                 }
                 if (videoUrl) break;
@@ -525,6 +630,43 @@ async function pollTask(taskId) {
     return videoUrl;
 }
 
+async function generateImage(prompt, size, apiKey) {
+    const resp = await fetch('/api/image/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            prompt: prompt,
+            size: size || '1024x1024',
+        })
+    });
+    if (!resp.ok) {
+        const err = await resp.text();
+        throw new Error(`Image generation failed: ${err}`);
+    }
+    const data = await resp.json();
+    if (data.task_id) {
+        // Poll for image
+        let attempts = 0;
+        while (attempts < 20) {
+            attempts++;
+            await new Promise(r => setTimeout(r, 2000));
+            const pollResp = await fetch(`/api/tasks/${data.task_id}`);
+            if (!pollResp.ok) continue;
+            const pollData = await pollResp.json();
+            if (pollData.status === 'completed' && pollData.final_video_file) {
+                // The image might be stored as a file
+                return `/api/video/${data.task_id}`;
+            }
+        }
+        throw new Error('Image generation timed out.');
+    }
+    // If the response is the image directly
+    if (data.image_url) {
+        return data.image_url;
+    }
+    throw new Error('No image URL returned.');
+}
+
 // ============================================================
 // MAIN GENERATE
 // ============================================================
@@ -533,7 +675,7 @@ async function generateVideo() {
     if (isGenerating) return;
 
     const apiKey = apiKeyInput.value.trim();
-    const model = modelSelect.value;
+    const modelType = modelSelect.value; // 'text', 'image', 'video'
     const resolution = currentMode === 'simple'
         ? resolutionInput.value.trim() || '720p'
         : creativeResolution.value.trim() || '720p';
@@ -543,70 +685,110 @@ async function generateVideo() {
         return;
     }
 
-    let payload;
-    let endpoint = '/api/tasks/simple';
-
-    if (currentMode === 'simple') {
-        const prompt = promptInput.value.trim();
-        if (!prompt) {
-            setStatus('❌ Please enter a prompt.', true);
-            return;
-        }
-        const duration = parseInt(durationInput.value) || 5;
-        payload = {
-            prompt: prompt,
-            mode: 't2v',
-            duration: duration,
-            video_width: resolution === '1080p' ? 1920 : 1152,
-            video_height: resolution === '1080p' ? 1080 : 768,
-            model: model,
-        };
-    } else {
-        // CREATIVE MODE – Auto-generated scenes
-        const idea = creativeIdea.value.trim();
-        if (!idea) {
-            setStatus('❌ Please enter a main prompt.', true);
-            return;
-        }
-
-        const sceneCount = parseInt(sceneCountInput.value) || 3;
-        const sceneDuration = parseInt(creativeDurationInput.value) || 5;
-        const style = creativeStyle.value.trim() || 'cinematic realistic style';
-
-        // Use the creative endpoint – the server's CreativeVideoPipeline
-        // will auto-generate scenes from the idea.
-        endpoint = '/api/tasks/creative';
-        payload = {
-            idea: idea,
-            creative_name: 'Rehan Creative Video',
-            style: style,
-            chaining_mode: 'keyframes',
-            video_width: resolution === '1080p' ? 1920 : 1152,
-            video_height: resolution === '1080p' ? 1080 : 768,
-            duration_source: 'manual',
-            scene_count: sceneCount,
-            uniform_duration: true,
-            scene_durations_json: JSON.stringify(Array(sceneCount).fill(sceneDuration)),
-            // The creative pipeline will use the idea to generate scene descriptions
-        };
-    }
-
-    isGenerating = true;
-    stopPolling = false;
-    generateBtn.disabled = true;
-    generateBtn.textContent = '⏳ Generating...';
-    setStatus('⏳ Setting API key...');
-    setProgress(5);
+    resetOutput();
     hideError();
-    videoOutput.style.display = 'none';
-    downloadBtn.style.display = 'none';
     setStepDetail('');
     setElapsedTime(0);
     startTime = Date.now();
 
     try {
+        // Ensure API key is set on the server (for video/image endpoints)
         await setApiKey(apiKey);
-        setStatus('⏳ Submitting task...');
+        setProgress(5);
+        setStatus('⏳ Processing...');
+
+        if (modelType === 'text') {
+            // TEXT GENERATION – Direct Agnes API call
+            setStatus('⏳ Generating text...');
+            const prompt = promptInput.value.trim() || 'Hello, how are you?';
+            const resp = await fetch('https://apihub.agnes-ai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + apiKey
+                },
+                body: JSON.stringify({
+                    model: 'agnes-2.0-flash',
+                    messages: [
+                        { role: 'user', content: prompt }
+                    ],
+                    max_tokens: 500,
+                    temperature: 0.7
+                })
+            });
+            if (!resp.ok) {
+                const err = await resp.text();
+                throw new Error(`Text API error: ${err}`);
+            }
+            const data = await resp.json();
+            const text = data.choices?.[0]?.message?.content || 'No response';
+            setProgress(100);
+            setStatus('✅ Text generated!');
+            showText(text);
+            return;
+        }
+
+        if (modelType === 'image') {
+            // IMAGE GENERATION
+            setStatus('⏳ Generating image...');
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                setStatus('❌ Please enter a prompt.', true);
+                return;
+            }
+            const size = imageSizeInput.value.trim() || '1024x1024';
+            const imageUrl = await generateImage(prompt, size, apiKey);
+            setProgress(100);
+            setStatus('✅ Image ready!');
+            showImage(imageUrl);
+            return;
+        }
+
+        // VIDEO GENERATION (existing logic)
+        let payload;
+        let endpoint = '/api/tasks/simple';
+
+        if (currentMode === 'simple') {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                setStatus('❌ Please enter a prompt.', true);
+                return;
+            }
+            const duration = parseInt(durationInput.value) || 5;
+            payload = {
+                prompt: prompt,
+                mode: 't2v',
+                duration: duration,
+                video_width: resolution === '1080p' ? 1920 : 1152,
+                video_height: resolution === '1080p' ? 1080 : 768,
+            };
+        } else {
+            // Creative mode
+            const idea = creativeIdea.value.trim();
+            if (!idea) {
+                setStatus('❌ Please enter a main prompt.', true);
+                return;
+            }
+            const sceneCount = parseInt(sceneCountInput.value) || 3;
+            const sceneDuration = parseInt(creativeDurationInput.value) || 5;
+            const style = creativeStyle.value.trim() || 'cinematic realistic style';
+
+            endpoint = '/api/tasks/creative';
+            payload = {
+                idea: idea,
+                creative_name: 'Rehan Creative Video',
+                style: style,
+                chaining_mode: 'keyframes',
+                video_width: resolution === '1080p' ? 1920 : 1152,
+                video_height: resolution === '1080p' ? 1080 : 768,
+                duration_source: 'manual',
+                scene_count: sceneCount,
+                uniform_duration: true,
+                scene_durations_json: JSON.stringify(Array(sceneCount).fill(sceneDuration)),
+            };
+        }
+
+        setStatus('⏳ Submitting video task...');
         setProgress(10);
 
         const response = await fetch(endpoint, {
@@ -630,20 +812,7 @@ async function generateVideo() {
             if (videoUrl) {
                 setProgress(100);
                 setStatus('✅ Video ready!');
-                setStepDetail('');
-                setElapsedTime(0);
-                videoOutput.src = videoUrl;
-                videoOutput.style.display = 'block';
-                downloadBtn.style.display = 'inline-block';
-                videoOutput.load();
-                downloadBtn.onclick = () => {
-                    const a = document.createElement('a');
-                    a.href = videoUrl;
-                    a.download = 'video.mp4';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                };
+                showVideo(videoUrl);
             } else {
                 throw new Error('No video URL returned.');
             }
@@ -658,7 +827,7 @@ async function generateVideo() {
         isGenerating = false;
         stopPolling = true;
         generateBtn.disabled = false;
-        generateBtn.textContent = 'Generate Video';
+        generateBtn.textContent = 'Generate';
         if (elapsedInterval) {
             clearInterval(elapsedInterval);
             elapsedInterval = null;
@@ -670,11 +839,19 @@ async function generateVideo() {
 // EVENTS
 // ============================================================
 
-generateBtn.addEventListener('click', generateVideo);
+generateBtn.addEventListener('click', function() {
+    generateBtn.disabled = true;
+    generateBtn.textContent = '⏳...';
+    generateVideo().finally(() => {
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate';
+    });
+});
+
 promptInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        generateVideo();
+        generateBtn.click();
     }
 });
 
@@ -683,8 +860,7 @@ promptInput.addEventListener('keydown', (e) => {
 // ============================================================
 
 setStatus('● ready');
-console.log('🎬 Rehan Models Video Generator loaded.');
-console.log('Mode: Simple');
+console.log('🎬 Rehan Models – Text, Image, Video loaded.');
 </script>
 </body>
 </html>
