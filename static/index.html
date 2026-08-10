@@ -57,8 +57,21 @@
             color: #8a9bb5;
             font-size: 14px;
             text-align: center;
-            min-height: 24px;
+            min-height: 30px;
             margin: 12px 0;
+            word-break: break-word;
+        }
+        .step-detail {
+            color: #ffb07c;
+            font-size: 13px;
+            text-align: center;
+            margin: 4px 0;
+            min-height: 20px;
+        }
+        .elapsed {
+            color: #5a7a8a;
+            font-size: 12px;
+            text-align: center;
         }
         .progress {
             width: 100%;
@@ -126,6 +139,11 @@
         .flex { display: flex; gap: 8px; }
         .flex input { flex: 1; }
         .flex button { width: auto; margin-top: 0; }
+        .stop-btn {
+            background: #6b3a3a;
+            color: #ffb3b3;
+        }
+        .stop-btn:hover { background: #8b4a4a; }
     </style>
 </head>
 <body>
@@ -164,6 +182,8 @@
     <button id="generateBtn">Generate Video</button>
 
     <div class="status" id="status">● ready</div>
+    <div class="step-detail" id="stepDetail"></div>
+    <div class="elapsed" id="elapsedTime"></div>
     <div class="progress"><div class="fill" id="progressFill"></div></div>
 
     <!-- Video Output -->
@@ -179,7 +199,7 @@
 
 <script>
 // ================================================================
-//  AGNES VIDEO GENERATOR – WITH LONGER POLLING (5 MIN)
+//  AGNES VIDEO GENERATOR – UNLIMITED POLLING + DETAILED STEPS
 // ================================================================
 
 const apiKeyInput = document.getElementById('apiKey');
@@ -189,6 +209,8 @@ const durationInput = document.getElementById('duration');
 const resolutionInput = document.getElementById('resolution');
 const generateBtn = document.getElementById('generateBtn');
 const statusDiv = document.getElementById('status');
+const stepDetailDiv = document.getElementById('stepDetail');
+const elapsedTimeDiv = document.getElementById('elapsedTime');
 const progressFill = document.getElementById('progressFill');
 const videoOutput = document.getElementById('videoOutput');
 const downloadBtn = document.getElementById('downloadBtn');
@@ -196,10 +218,23 @@ const errorBox = document.getElementById('errorBox');
 
 let isGenerating = false;
 let pollInterval = null;
+let startTime = null;
+let elapsedInterval = null;
+let stopPolling = false;
 
 function setStatus(msg, isError = false) {
     statusDiv.textContent = msg;
     statusDiv.style.color = isError ? '#ff6b6b' : '#8a9bb5';
+}
+
+function setStepDetail(msg) {
+    stepDetailDiv.textContent = msg || '';
+}
+
+function setElapsedTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    elapsedTimeDiv.textContent = `⏱️ ${mins}m ${secs}s elapsed`;
 }
 
 function setProgress(pct) {
@@ -229,14 +264,12 @@ async function setApiKey(apiKey) {
     return true;
 }
 
-// ----- Poll task status with better handling -----
+// ----- Poll task status indefinitely -----
 async function pollTask(taskId) {
-    let attempts = 0;
-    const maxAttempts = 100; // 100 * 3s = 5 minutes
     let videoUrl = null;
+    let lastMessage = '';
 
-    while (attempts < maxAttempts) {
-        attempts++;
+    while (!stopPolling) {
         await new Promise(r => setTimeout(r, 3000));
 
         try {
@@ -244,36 +277,75 @@ async function pollTask(taskId) {
             if (!resp.ok) continue;
             const data = await resp.json();
 
-            // data fields: status, progress, final_video_file, error
+            // data fields: status, progress, current_step, current_message, final_video_file
             const status = data.status || 'pending';
             const progress = data.progress || 0;
-            setProgress(20 + (progress * 0.8));
+            const currentStep = data.current_step || '';
+            const currentMessage = data.current_message || '';
 
-            setStatus(`⏳ Rendering... ${Math.round(progress)}% (${attempts}/${maxAttempts})`);
+            // Update progress
+            setProgress(10 + (progress * 0.9));
+
+            // Show detailed step message
+            let stepMsg = currentStep || currentMessage;
+            if (stepMsg) {
+                setStepDetail(`🔹 ${stepMsg}`);
+                lastMessage = stepMsg;
+            } else if (lastMessage) {
+                // keep last message
+            } else {
+                setStepDetail('⏳ Processing...');
+            }
+
+            // Update elapsed time
+            if (startTime) {
+                const elapsed = (Date.now() - startTime) / 1000;
+                setElapsedTime(elapsed);
+            }
+
+            setStatus(`⏳ Rendering... ${Math.round(progress)}%`);
 
             if (status === 'completed') {
-                // Try to get the video URL
+                // Try to get video URL
                 if (data.final_video_file) {
                     videoUrl = `/api/video/${taskId}`;
                 } else {
-                    // fallback: try to see if video exists
+                    // fallback: check if video exists
                     const testResp = await fetch(`/api/video/${taskId}`, { method: 'HEAD' });
                     if (testResp.ok) {
-                        videoUrl = `/api/video/${taskId}`;
+                        videoUrl = `/api/video/${taskId}`
+                    } else {
+                        // If we don't have video but status is completed, maybe it's an image task?
+                        // For image tasks, the final file might be an image. We'll handle that.
+                        // Let's just try to fetch the final file.
+                        const fileResp = await fetch(`/api/video/${taskId}`);
+                        if (fileResp.ok) {
+                            videoUrl = `/api/video/${taskId}`;
+                        }
                     }
                 }
                 if (videoUrl) break;
+                else {
+                    // If completed but no video, maybe it's an image?
+                    // We'll try to get the image.
+                    const imgResp = await fetch(`/api/image/${taskId}`);
+                    if (imgResp.ok) {
+                        videoUrl = `/api/image/${taskId}`;
+                        break;
+                    }
+                }
             } else if (status === 'failed') {
                 throw new Error(data.error || 'Generation failed');
             }
         } catch (e) {
-            // If the poll fails, we just continue – network hiccups are okay.
             console.warn('Poll error:', e);
+            // Continue polling, but maybe slow down if errors occur frequently?
+            await new Promise(r => setTimeout(r, 2000));
         }
     }
 
-    if (!videoUrl) {
-        throw new Error('Timeout waiting for video (5 minutes). The task might still be running – check Railway logs.');
+    if (!videoUrl && !stopPolling) {
+        throw new Error('Task did not complete.');
     }
     return videoUrl;
 }
@@ -298,20 +370,25 @@ async function generateVideo() {
     }
 
     isGenerating = true;
+    stopPolling = false;
     generateBtn.disabled = true;
+    generateBtn.textContent = '⏳ Generating...';
     setStatus('⏳ Setting API key...');
     setProgress(5);
     hideError();
     videoOutput.style.display = 'none';
     downloadBtn.style.display = 'none';
+    setStepDetail('');
+    setElapsedTime(0);
+    startTime = Date.now();
 
     try {
-        // 1. Send API key to server
+        // 1. Send API key
         await setApiKey(apiKey);
         setStatus('⏳ Submitting task...');
         setProgress(10);
 
-        // 2. Submit the generation task
+        // 2. Submit task
         const response = await fetch('/api/tasks/simple', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -331,26 +408,32 @@ async function generateVideo() {
         }
 
         const data = await response.json();
-        setProgress(20);
+        setProgress(15);
 
         if (data.task_id) {
             const taskId = data.task_id;
-            setStatus(`⏳ Task ${taskId} queued. Polling for completion...`);
+            setStatus(`⏳ Task ${taskId} queued. Polling...`);
             const videoUrl = await pollTask(taskId);
-            setProgress(100);
-            setStatus('✅ Video ready!');
-            videoOutput.src = videoUrl;
-            videoOutput.style.display = 'block';
-            downloadBtn.style.display = 'inline-block';
-            videoOutput.load();
-            downloadBtn.onclick = () => {
-                const a = document.createElement('a');
-                a.href = videoUrl;
-                a.download = 'video.mp4';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            };
+            if (videoUrl) {
+                setProgress(100);
+                setStatus('✅ Video ready!');
+                setStepDetail('');
+                setElapsedTime(0);
+                videoOutput.src = videoUrl;
+                videoOutput.style.display = 'block';
+                downloadBtn.style.display = 'inline-block';
+                videoOutput.load();
+                downloadBtn.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = videoUrl;
+                    a.download = 'video.mp4';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                };
+            } else {
+                throw new Error('No video URL returned.');
+            }
         } else {
             throw new Error('No task ID returned.');
         }
@@ -360,7 +443,13 @@ async function generateVideo() {
         console.error(err);
     } finally {
         isGenerating = false;
+        stopPolling = true;
         generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate Video';
+        if (elapsedInterval) {
+            clearInterval(elapsedInterval);
+            elapsedInterval = null;
+        }
     }
 }
 
