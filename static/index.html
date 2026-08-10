@@ -139,39 +139,6 @@
         .flex { display: flex; gap: 8px; flex-wrap: wrap; }
         .flex input { flex: 1; min-width: 60px; }
         .flex button { width: auto; margin-top: 0; }
-        .scene-item {
-            background: #0f141e;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 8px;
-            border: 1px solid #2a3344;
-        }
-        .scene-item .flex { margin-bottom: 4px; }
-        .scene-item .flex input { flex: 1; }
-        .scene-item .flex select { flex: 0 0 80px; }
-        .remove-scene {
-            background: #6b3a3a;
-            color: #ffb3b3;
-            border: none;
-            padding: 4px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-top: 4px;
-        }
-        .remove-scene:hover { background: #8b4a4a; }
-        .add-scene-btn {
-            background: #2a3344;
-            color: #e0e6ed;
-            border: none;
-            padding: 8px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 4px;
-            width: 100%;
-        }
-        .add-scene-btn:hover { background: #3e4a60; }
         .mode-toggle {
             display: flex;
             gap: 8px;
@@ -214,6 +181,27 @@
         }
         .scene-duration-preset button:hover { background: #3e4a60; }
         .scene-duration-preset button.active { border-color: #7fdbff; background: #1a2a3a; }
+        .scene-count-select {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 4px 0 8px;
+        }
+        .scene-count-select button {
+            flex: 1;
+            min-width: 40px;
+            padding: 6px 8px;
+            font-size: 13px;
+            background: #2a3344;
+            color: #b0c4de;
+            border: 1px solid #2a3344;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 0;
+        }
+        .scene-count-select button:hover { background: #3e4a60; }
+        .scene-count-select button.active { border-color: #7fdbff; background: #1a2a3a; }
+        .creative-options { margin-top: 12px; }
     </style>
 </head>
 <body>
@@ -225,7 +213,7 @@
     <label>API Key</label>
     <input type="text" id="apiKey" placeholder="sk-..." value="sk-v3AY5kJOdHil90U8PcgqNCGYa39w3coiURlEAtbZBSmkSKCG">
 
-    <!-- Mode Toggle with explicit onclick -->
+    <!-- Mode Toggle -->
     <div class="mode-toggle">
         <button id="modeSimple" class="active" onclick="switchMode('simple')">📹 Simple</button>
         <button id="modeCreative" onclick="switchMode('creative')">🎬 Creative (Scenes)</button>
@@ -256,21 +244,47 @@
     </div>
 
     <!-- ============================================================ -->
-    <!-- CREATIVE MODE (Scenes) -->
+    <!-- CREATIVE MODE (Auto-Generated Scenes) -->
     <!-- ============================================================ -->
     <div id="creativeMode" class="hidden">
-        <label>Overall Idea</label>
-        <textarea id="creativeIdea">a girl running down a mountain hill</textarea>
+        <label>Main Prompt (Idea)</label>
+        <textarea id="creativeIdea">a guy fighting Thanos</textarea>
 
-        <label>Scenes</label>
-        <div id="sceneList">
-            <!-- Scenes will be added here -->
+        <div class="flex">
+            <div style="flex:1;">
+                <label>Number of Scenes</label>
+                <div class="scene-count-select" id="sceneCountSelect">
+                    <button data-count="2">2</button>
+                    <button data-count="3" class="active">3</button>
+                    <button data-count="4">4</button>
+                    <button data-count="5">5</button>
+                    <button data-count="6">6</button>
+                    <button data-count="8">8</button>
+                    <button data-count="10">10</button>
+                </div>
+                <input type="hidden" id="sceneCount" value="3">
+            </div>
+            <div style="flex:1;">
+                <label>Duration per Scene</label>
+                <div class="scene-duration-preset" id="creativeDurationPreset">
+                    <button data-dur="2">2s</button>
+                    <button data-dur="5" class="active">5s</button>
+                    <button data-dur="10">10s</button>
+                    <button data-dur="20">20s</button>
+                    <button data-dur="30">30s</button>
+                </div>
+                <input type="hidden" id="creativeDuration" value="5">
+            </div>
         </div>
-        <button class="add-scene-btn" id="addSceneBtn">+ Add Scene</button>
 
-        <div class="flex" style="margin-top:12px;">
-            <input type="text" id="creativeStyle" value="电影质感写实风格" placeholder="Style">
-            <input type="text" id="creativeResolution" value="720p" placeholder="720p / 1080p" style="flex:0 0 80px;">
+        <div class="creative-options">
+            <div class="flex">
+                <input type="text" id="creativeStyle" value="cinematic realistic style" placeholder="Style">
+                <input type="text" id="creativeResolution" value="720p" placeholder="720p / 1080p" style="flex:0 0 80px;">
+            </div>
+            <p style="font-size:12px;color:#5a7a8a;margin-top:4px;">
+                The AI will automatically generate scenes based on your main prompt.
+            </p>
         </div>
     </div>
 
@@ -307,7 +321,7 @@
 
 <script>
 // ================================================================
-//  REHAN MODELS – SIMPLE + CREATIVE (SCENES) VIDEO GENERATOR
+//  REHAN MODELS – SIMPLE + CREATIVE (AUTO-GENERATED SCENES)
 // ================================================================
 
 const apiKeyInput = document.getElementById('apiKey');
@@ -328,8 +342,8 @@ const errorBox = document.getElementById('errorBox');
 const creativeIdea = document.getElementById('creativeIdea');
 const creativeStyle = document.getElementById('creativeStyle');
 const creativeResolution = document.getElementById('creativeResolution');
-const sceneList = document.getElementById('sceneList');
-const addSceneBtn = document.getElementById('addSceneBtn');
+const sceneCountInput = document.getElementById('sceneCount');
+const creativeDurationInput = document.getElementById('creativeDuration');
 const modeSimple = document.getElementById('modeSimple');
 const modeCreative = document.getElementById('modeCreative');
 const simpleMode = document.getElementById('simpleMode');
@@ -341,89 +355,7 @@ let startTime = null;
 let currentMode = 'simple';
 
 // ============================================================
-// SCENE MANAGEMENT
-// ============================================================
-
-let scenes = [];
-
-function addScene(prompt = '', duration = 5) {
-    const idx = scenes.length;
-    scenes.push({ prompt, duration });
-
-    const div = document.createElement('div');
-    div.className = 'scene-item';
-    div.dataset.index = idx;
-
-    div.innerHTML = `
-        <div class="flex">
-            <input type="text" class="scene-prompt" value="${escapeHtml(prompt)}" placeholder="Scene description..." style="flex:1;">
-            <select class="scene-duration">
-                <option value="2" ${duration === 2 ? 'selected' : ''}>2s</option>
-                <option value="5" ${duration === 5 ? 'selected' : ''}>5s</option>
-                <option value="10" ${duration === 10 ? 'selected' : ''}>10s</option>
-                <option value="20" ${duration === 20 ? 'selected' : ''}>20s</option>
-                <option value="30" ${duration === 30 ? 'selected' : ''}>30s</option>
-            </select>
-        </div>
-        <button class="remove-scene">✕ Remove</button>
-    `;
-
-    // Update scene data on change
-    div.querySelector('.scene-prompt').addEventListener('input', function() {
-        scenes[idx].prompt = this.value;
-    });
-    div.querySelector('.scene-duration').addEventListener('change', function() {
-        scenes[idx].duration = parseInt(this.value);
-    });
-    div.querySelector('.remove-scene').addEventListener('click', function() {
-        scenes.splice(idx, 1);
-        renderScenes();
-    });
-
-    sceneList.appendChild(div);
-}
-
-function renderScenes() {
-    sceneList.innerHTML = '';
-    scenes.forEach((s, i) => {
-        const div = document.createElement('div');
-        div.className = 'scene-item';
-        div.dataset.index = i;
-        div.innerHTML = `
-            <div class="flex">
-                <input type="text" class="scene-prompt" value="${escapeHtml(s.prompt)}" placeholder="Scene description..." style="flex:1;">
-                <select class="scene-duration">
-                    <option value="2" ${s.duration === 2 ? 'selected' : ''}>2s</option>
-                    <option value="5" ${s.duration === 5 ? 'selected' : ''}>5s</option>
-                    <option value="10" ${s.duration === 10 ? 'selected' : ''}>10s</option>
-                    <option value="20" ${s.duration === 20 ? 'selected' : ''}>20s</option>
-                    <option value="30" ${s.duration === 30 ? 'selected' : ''}>30s</option>
-                </select>
-            </div>
-            <button class="remove-scene">✕ Remove</button>
-        `;
-        div.querySelector('.scene-prompt').addEventListener('input', function() {
-            scenes[i].prompt = this.value;
-        });
-        div.querySelector('.scene-duration').addEventListener('change', function() {
-            scenes[i].duration = parseInt(this.value);
-        });
-        div.querySelector('.remove-scene').addEventListener('click', function() {
-            scenes.splice(i, 1);
-            renderScenes();
-        });
-        sceneList.appendChild(div);
-    });
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// ============================================================
-// MODE SWITCH (exposed globally for onclick)
+// MODE SWITCH
 // ============================================================
 
 function switchMode(mode) {
@@ -438,35 +370,48 @@ function switchMode(mode) {
         modeSimple.classList.remove('active');
         creativeMode.classList.remove('hidden');
         simpleMode.classList.add('hidden');
-        if (scenes.length === 0) {
-            addScene('', 5);
-        }
     }
     console.log('Mode switched to:', mode);
 }
 
-// Also attach listeners for modern browsers (optional)
+// Attach listeners
 modeSimple.addEventListener('click', function() { switchMode('simple'); });
 modeCreative.addEventListener('click', function() { switchMode('creative'); });
 
 // ============================================================
-// DURATION PRESETS
+// SCENE COUNT PRESETS
 // ============================================================
 
-document.querySelectorAll('.scene-duration-preset button').forEach(btn => {
+document.querySelectorAll('#sceneCountSelect button').forEach(btn => {
     btn.addEventListener('click', function() {
-        document.querySelectorAll('.scene-duration-preset button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#sceneCountSelect button').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        durationInput.value = this.dataset.dur;
+        sceneCountInput.value = this.dataset.count;
     });
 });
 
 // ============================================================
-// ADD SCENE BUTTON
+// CREATIVE DURATION PRESETS
 // ============================================================
 
-addSceneBtn.addEventListener('click', function() {
-    addScene('', 5);
+document.querySelectorAll('#creativeDurationPreset button').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('#creativeDurationPreset button').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        creativeDurationInput.value = this.dataset.dur;
+    });
+});
+
+// ============================================================
+// SIMPLE DURATION PRESETS
+// ============================================================
+
+document.querySelectorAll('.scene-duration-preset:not(#creativeDurationPreset) button').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.scene-duration-preset:not(#creativeDurationPreset) button').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        durationInput.value = this.dataset.dur;
+    });
 });
 
 // ============================================================
@@ -617,20 +562,19 @@ async function generateVideo() {
             model: model,
         };
     } else {
+        // CREATIVE MODE – Auto-generated scenes
         const idea = creativeIdea.value.trim();
         if (!idea) {
-            setStatus('❌ Please enter an idea.', true);
-            return;
-        }
-        const sceneData = scenes.filter(s => s.prompt.trim());
-        if (sceneData.length === 0) {
-            setStatus('❌ Please add at least one scene.', true);
+            setStatus('❌ Please enter a main prompt.', true);
             return;
         }
 
-        const sceneDurations = sceneData.map(s => s.duration);
-        const style = creativeStyle.value.trim() || '电影质感写实风格';
+        const sceneCount = parseInt(sceneCountInput.value) || 3;
+        const sceneDuration = parseInt(creativeDurationInput.value) || 5;
+        const style = creativeStyle.value.trim() || 'cinematic realistic style';
 
+        // Use the creative endpoint – the server's CreativeVideoPipeline
+        // will auto-generate scenes from the idea.
         endpoint = '/api/tasks/creative';
         payload = {
             idea: idea,
@@ -640,10 +584,10 @@ async function generateVideo() {
             video_width: resolution === '1080p' ? 1920 : 1152,
             video_height: resolution === '1080p' ? 1080 : 768,
             duration_source: 'manual',
-            scene_count: sceneData.length,
-            uniform_duration: false,
-            scene_durations_json: JSON.stringify(sceneDurations),
-            user_scene_prompts_json: JSON.stringify(sceneData.map(s => s.prompt))
+            scene_count: sceneCount,
+            uniform_duration: true,
+            scene_durations_json: JSON.stringify(Array(sceneCount).fill(sceneDuration)),
+            // The creative pipeline will use the idea to generate scene descriptions
         };
     }
 
@@ -734,8 +678,13 @@ promptInput.addEventListener('keydown', (e) => {
     }
 });
 
-// Init
+// ============================================================
+// INIT
+// ============================================================
+
 setStatus('● ready');
+console.log('🎬 Rehan Models Video Generator loaded.');
+console.log('Mode: Simple');
 </script>
 </body>
 </html>
