@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rehan Models – AI Studio</title>
+    <title>kingroxx's ai – AI Studio</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -247,7 +247,7 @@
 </head>
 <body>
 <div class="container">
-    <h1>🎬 Rehan Models</h1>
+    <h1>🎬 kingroxx Models</h1>
     <div class="sub">AI Studio – Text • Image • Video</div>
 
     <!-- API Key -->
@@ -270,9 +270,9 @@
         <!-- Model Type Selector -->
         <label>Model Type</label>
         <select id="modelSelect">
-            <option value="text">📝 Rehan Text Model</option>
-            <option value="image">🖼️ Rehan Image Model</option>
-            <option value="video" selected>🎬 Rehan Video Model</option>
+                <option value="text">📝 kingroxx's Text Model</option>
+            <option value="image">🖼️ kingroxx's Image Model</option>
+            <option value="video" selected>🎬 kingroxx's Video Model</option>
         </select>
         <div class="model-type-indicator" id="modelTypeIndicator">🎬 Video Mode</div>
 
@@ -390,21 +390,21 @@
     <video id="videoOutput" controls autoplay loop playsinline></video>
     <div class="img-wrapper" id="imageWrapper">
         <img id="imageOutput" alt="Generated image" />
-        <div class="img-badge" id="imageBadge">🔹 Rehan v2</div>
+        <div class="img-badge" id="imageBadge">🔹 kingroxx v2</div>
     </div>
     <div class="text-output" id="textOutput"></div>
     <div class="error-box" id="errorBox"></div>
     <button class="download-btn" id="downloadBtn">💾 Save</button>
 
     <div class="footer">
-        <span class="badge">🔹 Powered by Rehan</span>
+        <span class="badge">🔹 Powered by the great kingroxx</span>
         <span style="margin-left:8px;">• Unlimited • Free</span>
     </div>
 </div>
 
 <script>
 // ================================================================
-//  REHAN MODELS – TEXT + IMAGE + VIDEO (FULLY WORKING)
+//  kingroxx's MODELS – TEXT + IMAGE + VIDEO (FULLY WORKING)
 // ================================================================
 
 const apiKeyInput = document.getElementById('apiKey');
@@ -579,7 +579,7 @@ function showVideo(url) {
 function showImage(url, fallback = false) {
     imageOutput.src = url;
     imageWrapper.style.display = 'block';
-    imageBadge.textContent = fallback ? '🔹 Rehan v2' : '🔹 Rehan Pro';
+    imageBadge.textContent = fallback ? '🔹 kingroxx v2' : '🔹 kingroxx Pro';
     downloadBtn.style.display = 'inline-block';
     downloadBtn.onclick = () => {
         const a = document.createElement('a');
@@ -595,7 +595,7 @@ function showImage(url, fallback = false) {
         console.warn('Image load failed, retrying Pollinations...');
         const fallbackUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptInput.value.trim() || 'a beautiful scene')}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random()*100000)}`;
         this.src = fallbackUrl;
-        imageBadge.textContent = '🔹 Rehan v2 (retry)';
+        imageBadge.textContent = '🔹 kingroxx v2 (retry)';
     };
 }
 
@@ -853,7 +853,7 @@ async function generateVideo() {
             endpoint = '/api/tasks/creative';
             payload = {
                 idea: idea,
-                creative_name: 'Rehan Creative Video',
+                creative_name: 'kingroxx Creative Video',
                 style: style,
                 chaining_mode: 'keyframes',
                 video_width: resolution === '1080p' ? 1920 : (resolution === '4K' ? 3840 : 1152),
@@ -929,7 +929,7 @@ promptInput.addEventListener('keydown', (e) => {
 // ============================================================
 
 setStatus('● ready');
-console.log('🎬 Rehan Models – Text, Image, Video loaded.');
+console.log('🎬 kingroxx Models – Text, Image, Video loaded.');
 </script>
 </body>
 </html>
